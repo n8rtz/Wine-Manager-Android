@@ -19,6 +19,13 @@ class MainSwipeTests(unittest.TestCase):
         # card tab drags must not also switch the main tab.
         self.assertIn("awaitPointerEvent(PointerEventPass.Final)", source)
         self.assertIn(".then(tabSwipeModifier)", source)
+        # It fires mid-drag once the threshold is crossed, and only a
+        # consumed *movement* (a child pager/tab row claiming the drag)
+        # disqualifies it — never the consumed down event, which every
+        # card/button produces and would kill the swipe everywhere.
+        self.assertIn("if (change.isConsumed) moveConsumed = true", source)
+        self.assertIn("if (start != null && !moveConsumed && !fired)", source)
+        self.assertNotIn("downConsumed", source)
 
 
 class CardTextTests(unittest.TestCase):

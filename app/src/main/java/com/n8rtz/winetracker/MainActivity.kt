@@ -348,40 +348,58 @@ fun MainAppScaffold(
     }
     // Swipe between the main screens (Cellar, Notes, History, Rankings,
     // Profile), mirroring the Bottles/Racks swipe in the cellar. The
-    // observer runs on the Final pointer pass: horizontal drags a child
-    // already consumed (the cellar pager, note-card date tabs, History
-    // tabs) are ignored, so only unclaimed swipes change the main tab.
+    // observer runs on the Final pointer pass and fires as soon as a
+    // mostly-horizontal drag crosses the threshold. It must NOT
+    // disqualify a gesture just because the down (or up) event was
+    // consumed: cards/buttons consume those, which would make the swipe
+    // dead almost everywhere. What disqualifies a gesture is a child
+    // consuming the *movement* — that is how the cellar pager, the
+    // note-card date tabs and the History tabs claim a horizontal drag.
     val currentRouteState = rememberUpdatedState(currentRoute)
     val navigateToMenuState = rememberUpdatedState { route: String -> navigateToMenu(route) }
     val tabSwipeModifier = Modifier.pointerInput(Unit) {
         val thresholdPx = 72.dp.toPx()
         awaitPointerEventScope {
             var downPosition: Offset? = null
-            var downConsumed = false
+            var moveConsumed = false
+            var fired = false
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Final)
                 val change = event.changes.firstOrNull() ?: continue
                 if (change.pressed && !change.previousPressed) {
                     downPosition = change.position
-                    downConsumed = change.isConsumed
-                } else if (change.pressed && change.isConsumed) {
-                    downConsumed = true
-                } else if (!change.pressed && change.previousPressed) {
+                    moveConsumed = false
+                    fired = false
+                } else if (change.pressed) {
+                    // A child pager/tab row claiming the drag consumes the
+                    // position changes; ordinary clickables and vertical
+                    // lists do not consume horizontal movement.
+                    if (change.isConsumed) moveConsumed = true
                     val start = downPosition
-                    downPosition = null
-                    if (start == null || downConsumed || change.isConsumed) continue
-                    val route = currentRouteState.value ?: continue
-                    val index = TOP_LEVEL_MENU_ORDER.indexOf(route)
-                    if (index < 0) continue
-                    val delta = change.position - start
-                    if (kotlin.math.abs(delta.x) < thresholdPx) continue
-                    if (kotlin.math.abs(delta.x) < kotlin.math.abs(delta.y) * 1.5f) continue
-                    val target = if (delta.x < 0) {
-                        TOP_LEVEL_MENU_ORDER.getOrNull(index + 1)
-                    } else {
-                        TOP_LEVEL_MENU_ORDER.getOrNull(index - 1)
+                    if (start != null && !moveConsumed && !fired) {
+                        val delta = change.position - start
+                        if (kotlin.math.abs(delta.x) >= thresholdPx &&
+                            kotlin.math.abs(delta.x) >= kotlin.math.abs(delta.y) * 1.5f
+                        ) {
+                            val route = currentRouteState.value
+                            val index = route?.let { TOP_LEVEL_MENU_ORDER.indexOf(it) } ?: -1
+                            if (index >= 0) {
+                                val target = if (delta.x < 0) {
+                                    TOP_LEVEL_MENU_ORDER.getOrNull(index + 1)
+                                } else {
+                                    TOP_LEVEL_MENU_ORDER.getOrNull(index - 1)
+                                }
+                                if (target != null) {
+                                    fired = true
+                                    navigateToMenuState.value(target)
+                                }
+                            }
+                        }
                     }
-                    if (target != null) navigateToMenuState.value(target)
+                } else if (!change.pressed && change.previousPressed) {
+                    downPosition = null
+                    moveConsumed = false
+                    fired = false
                 }
             }
         }
