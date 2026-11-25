@@ -3,7 +3,6 @@ package com.n8rtz.winetracker.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -31,13 +30,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -87,45 +84,35 @@ internal fun RackQuickAddButton(
     Box(
         modifier = Modifier
             .size(width = 44.dp, height = 40.dp)
-            // The "+" (14.dp) + 1.dp gap pushes the 25.dp rack glyph's centre
-            // 7.5.dp right of this button's centre. Shifting the button left
-            // by that amount centres the rack icon over the expand caret in
-            // the WineCard trailing column below it (both are centred in
-            // that column), while the upward shift lifts it away from the
-            // rating number now sitting between the button and the caret.
-            .offset(x = (-7.5).dp, y = (-8).dp)
+            // The glyph (which carries its own plus badge) is centred in
+            // this button, so it sits over the expand caret in the WineCard
+            // trailing column below it (both are centred in that column);
+            // the upward shift lifts it away from the rating number now
+            // sitting between the button and the caret.
+            .offset(y = (-8).dp)
             .semantics {
                 contentDescription = if (automaticNewAddition) "Add wine to another rack" else "Choose wine racks"
             }
             .combinedClickable(onClick = onOpenRackSelection, onLongClick = onLongPress),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
-            RackGlyph(
-                modifier = Modifier.size(width = 25.dp, height = 27.dp),
-                color = MaterialTheme.colorScheme.primary,
-                contentScale = ContentScale.FillBounds
-            )
-        }
+        RackGlyph(
+            modifier = Modifier.size(34.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
 @Composable
 private fun RackGlyph(
     modifier: Modifier = Modifier,
-    color: Color,
-    contentScale: ContentScale = ContentScale.Fit
+    color: Color
 ) {
-    Image(
-        painter = painterResource(R.drawable.wine_rack_lattice),
+    Icon(
+        painter = painterResource(R.drawable.ic_add_to_rack),
         contentDescription = null,
         modifier = modifier,
-        contentScale = contentScale,
-        colorFilter = ColorFilter.tint(color)
+        tint = color
     )
 }
 

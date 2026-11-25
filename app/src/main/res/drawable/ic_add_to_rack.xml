@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "Add to rack" glyph, recreated as a vector from the approved design
+  (docs/icon-concepts/approved-add-to-rack.png): a plain rack with a
+  diagonal display board on top, one bottle stored flat below, one bottle
+  resting on the board, and a plus badge overlapping its base end.
+  Single colour (tint at the use site); the plus and the gaps between
+  bottle/board/rack are transparent knock-outs.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- rack frame: posts + rails + diagonal display board, uniform weight -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M3,6.5 L7,6.5 L7,46.8 L3,46.8 Z
+                          M41,24 L45,24 L45,46.8 L41,46.8 Z
+                          M3,26 L45,26 L45,29.8 L3,29.8 Z
+                          M3,40.8 L45,40.8 L45,44.6 L3,44.6 Z
+                          M4.8,9.6 L42.3,26 L40.7,29.4 L3.2,13 Z" />
+
+    <!-- bottle stored flat in the bottom compartment -->
+    <group
+        android:translateX="23"
+        android:translateY="35.4">
+        <path
+            android:fillColor="#FF000000"
+            android:pathData="M-14.6,-1.5 L-7.6,-1.5 C-5.6,-1.5 -4.8,-4.2 -2.2,-4.2 L13,-4.2 C14.2,-4.2 15,-3.4 15,-2.2 L15,2.2 C15,3.4 14.2,4.2 13,4.2 L-2.2,4.2 C-4.8,4.2 -5.6,1.5 -7.6,1.5 L-14.6,1.5 C-15.2,1.5 -15.5,0.9 -15.5,0 C-15.5,-0.9 -15.2,-1.5 -14.6,-1.5 Z" />
+    </group>
+
+    <!-- display bottle: same silhouette, rotated onto the diagonal board -->
+    <group
+        android:translateX="28.1"
+        android:translateY="14.3"
+        android:rotation="24">
+        <path
+            android:fillColor="#FF000000"
+            android:pathData="M-14.6,-1.5 L-7.6,-1.5 C-5.6,-1.5 -4.8,-4.2 -2.2,-4.2 L13,-4.2 C14.2,-4.2 15,-3.4 15,-2.2 L15,2.2 C15,3.4 14.2,4.2 13,4.2 L-2.2,4.2 C-4.8,4.2 -5.6,1.5 -7.6,1.5 L-14.6,1.5 C-15.2,1.5 -15.5,0.9 -15.5,0 C-15.5,-0.9 -15.2,-1.5 -14.6,-1.5 Z" />
+    </group>
+
+    <!-- plus badge, plus knocked out -->
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M38.5,1.7 C42.2,1.7 45.2,4.7 45.2,8.4 C45.2,12.1 42.2,15.1 38.5,15.1 C34.8,15.1 31.8,12.1 31.8,8.4 C31.8,4.7 34.8,1.7 38.5,1.7 Z
+                          M37.4,4.1 L39.6,4.1 L39.6,7.3 L42.7,7.3 L42.7,9.5 L39.6,9.5 L39.6,12.7 L37.4,12.7 L37.4,9.5 L34.3,9.5 L34.3,7.3 L37.4,7.3 Z" />
+</vector>

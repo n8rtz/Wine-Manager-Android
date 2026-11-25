@@ -18,20 +18,20 @@ class CellarRacksUiTests(unittest.TestCase):
         screen = (APP / "ui/screens/CellarScreen.kt").read_text()
         self.assertIn("fun RackQuickAddButton(", source)
         self.assertIn("private fun RackGlyph(", source)
-        self.assertIn("painterResource(R.drawable.wine_rack_lattice)", source)
-        self.assertIn("ColorFilter.tint(color)", source)
-        self.assertIn("modifier = Modifier.size(width = 25.dp, height = 27.dp)", source)
-        self.assertIn("Arrangement.spacedBy(1.dp)", source)
-        self.assertIn("Icons.Default.Add, contentDescription = null", source)
-        self.assertIn("contentScale = ContentScale.FillBounds", source)
+        self.assertIn("painterResource(R.drawable.ic_add_to_rack)", source)
+        self.assertIn("tint = color", source)
+        # The approved glyph carries its own plus badge, so the button no
+        # longer composes a separate "+" icon next to the rack.
+        self.assertIn("modifier = Modifier.size(34.dp)", source)
+        self.assertNotIn("Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp)", source)
         self.assertIn(".size(width = 44.dp, height = 40.dp)", source)
         self.assertIn(".combinedClickable(onClick = onOpenRackSelection, onLongClick = onLongPress)", source)
         self.assertIn("contentDescription = if (automaticNewAddition) \"Add wine to another rack\"", source)
-        asset = ROOT / "app/src/main/res/drawable-nodpi/wine_rack_lattice.png"
+        asset = ROOT / "app/src/main/res/drawable/ic_add_to_rack.xml"
         self.assertTrue(asset.exists())
-        data = asset.read_bytes()
-        self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
-        self.assertEqual(data[25], 6, "rack art should retain transparent checkerboard areas")
+        data = asset.read_text()
+        self.assertIn('android:viewportWidth="48"', data)
+        self.assertIn("plus badge", data)
         self.assertIn("onOpenRackSelection", source)
         self.assertNotIn("DropdownMenu(expanded = expanded", source)
         self.assertIn("Choose one or more racks", source)
@@ -261,7 +261,7 @@ class CellarRacksUiTests(unittest.TestCase):
         self.assertIn('val removeFromRack: (Set<Long>, String) -> Unit', screen)
         self.assertIn('new_additions_exclusions', screen)
         self.assertIn('excludedNewAdditions = excludedNewAdditionIds', screen)
-        self.assertIn('.offset(x = (-7.5).dp, y = (-8).dp)', views)
+        self.assertIn('.offset(y = (-8).dp)', views)
 
     def test_quick_rack_action_sits_above_the_expand_caret_on_cellar_cards(self):
         card = (APP / "ui/components/WineCard.kt").read_text()
@@ -275,7 +275,7 @@ class CellarRacksUiTests(unittest.TestCase):
         # rack icon is centred over the caret, which is centred in the same
         # WineCard trailing column (Column is CenterHorizontally).
         self.assertIn("horizontalAlignment = Alignment.CenterHorizontally", card)
-        self.assertIn('.offset(x = (-7.5).dp, y = (-8).dp)', views)
+        self.assertIn('.offset(y = (-8).dp)', views)
         self.assertNotIn('.offset(x = (-4).dp, y = (-4).dp)', views)
         self.assertIn("trailingAction = {", cellar)
         self.assertIn("RackQuickAddButton(", cellar)
