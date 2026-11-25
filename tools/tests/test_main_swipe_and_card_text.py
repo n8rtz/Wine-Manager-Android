@@ -66,7 +66,7 @@ class CardTextTests(unittest.TestCase):
 class NotesSearchPerformanceTests(unittest.TestCase):
     def test_search_documents_and_scores_are_precomputed(self):
         source = NOTES.read_text()
-        self.assertIn("val notesSearchDocuments = remember(history)", source)
+        self.assertIn("val notesSearchDocuments = remember(history, searchQuery.isBlank())", source)
         self.assertIn("val notesSearchScores = remember(history, searchQuery, notesSearchDocuments)", source)
         # The sort comparator reuses the precomputed scores instead of
         # re-scoring every comparison.

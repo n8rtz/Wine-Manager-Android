@@ -352,9 +352,15 @@ fun CellarScreen(
     }
 
     // Precomputed fragment-search documents (W-067): every query word
-    // can match a different field, in any order.
-    val cellarSearchDocuments = remember(inventory) {
-        inventory.associate { it.bottle.bottleId to it.definition.searchDocument(it.bottle.vintage) }
+    // can match a different field, in any order. Built lazily like the
+    // Notes screen (see there): nothing to score until a query exists,
+    // so entering the screen skips normalising every wine.
+    val cellarSearchDocuments = remember(inventory, searchQuery.isBlank()) {
+        if (searchQuery.isBlank()) {
+            emptyMap()
+        } else {
+            inventory.associate { it.bottle.bottleId to it.definition.searchDocument(it.bottle.vintage) }
+        }
     }
 
     // Fragment-search scores for the current query (bottleId -> score,

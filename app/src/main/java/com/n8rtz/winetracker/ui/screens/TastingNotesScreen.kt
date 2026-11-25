@@ -101,8 +101,16 @@ fun TastingNotesScreen(
     // Precomputed fragment-search documents and scores (W-067): typing
     // used to re-normalise every wine's fields on every keystroke (and
     // again inside the sort comparator), which made search laggy.
-    val notesSearchDocuments = remember(history) {
-        history.associate { it.note.noteId to it.definition.searchDocument(it.note.vintage) }
+    // Built lazily: with no query there is nothing to score, so entering
+    // the screen (e.g. mid tab-slide) skips normalising every wine; the
+    // documents are built once when the first query character arrives
+    // and reused for every keystroke after that.
+    val notesSearchDocuments = remember(history, searchQuery.isBlank()) {
+        if (searchQuery.isBlank()) {
+            emptyMap()
+        } else {
+            history.associate { it.note.noteId to it.definition.searchDocument(it.note.vintage) }
+        }
     }
     val notesSearchScores = remember(history, searchQuery, notesSearchDocuments) {
         if (searchQuery.isBlank()) {
