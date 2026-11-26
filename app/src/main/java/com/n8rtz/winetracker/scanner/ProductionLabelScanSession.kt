@@ -16,6 +16,8 @@ import com.yourapp.wine.ocr.ScanDeadline
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -35,6 +37,15 @@ internal object ProductionLabelScanSession {
     val state = mutable.asStateFlow()
     private var initialized = false
     private var job: Job? = null
+    /**
+     * Recognition started speculatively the moment the photo was taken,
+     * while the user is still deciding on the confirm screen. Adopted by
+     * [captured] on confirm; cancelled on retake/dismiss. The timer and
+     * budget still start at confirmation — this only hides the work
+     * behind the user's decision time.
+     */
+    private class SpeculativeScan(val requestId: Long, val file: File, val result: Deferred<ScanReport>)
+    private var speculativeScan: SpeculativeScan? = null
     // Allows deterministic lifecycle tests without invoking native OCR. Never set by the app.
     @Volatile internal var scannerForTesting: (suspend (Context, File, Long, ScanInputSource) -> ScanReport)? = null
     private var failedServiceRequest: Long? = null
@@ -94,6 +105,7 @@ internal object ProductionLabelScanSession {
             synchronized(lock) {
                 val state = mutable.value
                 if (state is LabelScanState.CapturingPhoto && state.requestId == id) {
+                    cancelSpeculative(id)
                     val report = state.rejected("The photo took too long — retake or enter details manually",
                         SystemClock.elapsedRealtime(), deadlineCancelled = true)
                     saveResult(app, report.requestId, report.result)
@@ -102,6 +114,48 @@ internal object ProductionLabelScanSession {
             }
         }
         true
+    }
+
+    /**
+     * The camera has written the photo and the user is looking at the
+     * confirm still: start recognizing now, speculatively. If the user
+     * retakes or leaves, the work is cancelled and nothing is published.
+     */
+    fun photoTaken(context: Context, id: Long, file: File) {
+        val app = context.applicationContext
+        synchronized(lock) {
+            val current = mutable.value
+            if (current is LabelScanState.CapturingPhoto && current.requestId == id &&
+                speculativeScan == null && file.isFile) {
+                Log.d("ProductionLabelScanSession", "photoTaken: starting speculative scan $id")
+                speculativeScan = SpeculativeScan(id, file, scope.async {
+                    ProductionLabelScanner.scan(app, file, SystemClock.elapsedRealtime(), ScanInputSource.CAMERA) { reported ->
+                        // Ignored while the user is still confirming
+                        // (state is CapturingPhoto); once confirm adopts
+                        // the scan, these drive the analyzing bar.
+                        synchronized(lock) {
+                            val current = mutable.value
+                            if (current is LabelScanState.Processing && current.requestId == id) {
+                                mutable.value = current.copy(step = reported)
+                            }
+                        }
+                    }
+                })
+            }
+        }
+    }
+
+    private fun cancelSpeculative(id: Long) {
+        val spec = synchronized(lock) {
+            if (speculativeScan?.requestId == id) speculativeScan.also { speculativeScan = null } else null
+        } ?: return
+        spec.result.cancel()
+        scope.launch {
+            spec.result.join()
+            if (spec.file.exists() && !spec.file.delete()) {
+                Log.w("ProductionLabelScanSession", "Could not delete speculative photo")
+            }
+        }
     }
 
     fun captured(context: Context, id: Long, file: File) {
@@ -130,7 +184,10 @@ internal object ProductionLabelScanSession {
             file.delete()
             return
         }
-        launchPhotoScan(app, id, started, ScanInputSource.CAMERA, file) { LocalLabelPhoto(file, file.length()) }
+        val prescan = synchronized(lock) {
+            if (speculativeScan?.requestId == id) speculativeScan.also { speculativeScan = null } else null
+        }?.result
+        launchPhotoScan(app, id, started, ScanInputSource.CAMERA, file, prescan) { LocalLabelPhoto(file, file.length()) }
     }
 
     fun selected(context: Context, uri: Uri): Boolean = synchronized(lock) {
@@ -150,7 +207,7 @@ internal object ProductionLabelScanSession {
     }
 
     private fun launchPhotoScan(app: Context, id: Long, started: Long, source: ScanInputSource,
-        initialFile: File? = null, obtain: suspend () -> LocalLabelPhoto) {
+        initialFile: File? = null, prescan: Deferred<ScanReport>? = null, obtain: suspend () -> LocalLabelPhoto) {
         // A new scan drops the previous review photo; at most one is ever retained.
         runCatching { File(app.cacheDir, REVIEW_PHOTO_NAME).takeIf { it.exists() }?.delete() }
         // Install the job before dispatch so cancellation cannot race an as-yet unassigned job.
@@ -177,7 +234,8 @@ internal object ProductionLabelScanSession {
                 }
                 if (!admitted) return@launch
                 stage = ScanStage.INITIALIZE
-                val result = scannerForTesting?.invoke(app, photo.file, started, source)
+                val scanned = scannerForTesting?.invoke(app, photo.file, started, source)
+                    ?: prescan?.await()
                     ?: ProductionLabelScanner.scan(app, photo.file, started, source) { reported ->
                         // Real pipeline progress for the Add Wine analyzing bar; stale reports
                         // from a superseded request are ignored.
@@ -188,6 +246,12 @@ internal object ProductionLabelScanSession {
                             }
                         }
                     }
+                // A speculative (pre-confirm) scan measured itself from
+                // the shutter; the reported total is the user's wait
+                // after confirming, so re-stamp it. Stage timings keep
+                // their true durations.
+                val result = if (prescan != null) scanned.copy(
+                    elapsedMs = (SystemClock.elapsedRealtime() - started).coerceAtLeast(0)) else scanned
                 val importMs = if (source == ScanInputSource.PHOTO_LIBRARY) preparationMs else 0L
                 completed = result.copy(diagnostics = result.diagnostics.copy(source = source,
                     inputBytes = photo.bytes, importMs = importMs,
@@ -296,7 +360,7 @@ internal object ProductionLabelScanSession {
     fun dismiss(context: Context, id: Long) = synchronized(lock) {
         val app = context.applicationContext
         when (val current = mutable.value) {
-            is LabelScanState.CapturingPhoto -> if (current.requestId == id) { mutable.value = LabelScanState.Idle; com.yourapp.wine.gliner.GlinerScanWarmup.discard(); LabelScanService.stop(app) }
+            is LabelScanState.CapturingPhoto -> if (current.requestId == id) { mutable.value = LabelScanState.Idle; cancelSpeculative(id); com.yourapp.wine.gliner.GlinerScanWarmup.discard(); LabelScanService.stop(app) }
             is LabelScanState.ImportingPhoto -> if (current.requestId == id) { mutable.value = LabelScanState.FinishingCancelledScan(id); job?.cancel() }
             is LabelScanState.Processing -> if (current.requestId == id) { mutable.value = LabelScanState.FinishingCancelledScan(id); job?.cancel() }
             is LabelScanState.Review -> if (current.requestId == id) { PendingLabelScanStore(app).clearResult(id); mutable.value = LabelScanState.Idle }

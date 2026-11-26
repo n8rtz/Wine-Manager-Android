@@ -46,8 +46,23 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         # time as the recognition start, not forward the shutter time.
         self.assertIn('val confirmedMs = SystemClock.elapsedRealtime()', session)
         self.assertIn('LabelScanState.Processing(id, file.absolutePath, confirmedMs)', session)
-        self.assertIn('launchPhotoScan(app, id, started, ScanInputSource.CAMERA, file)', session)
+        self.assertIn('launchPhotoScan(app, id, started, ScanInputSource.CAMERA, file, prescan)', session)
         self.assertNotIn('LabelScanState.Processing(id, file.absolutePath, current.shutterMs)', session)
+
+    def test_recognition_starts_speculatively_at_photo_taken(self):
+        session = (APP / 'scanner/ProductionLabelScanSession.kt').read_text()
+        vm = (APP / 'viewmodels/ScannerViewModel.kt').read_text()
+        add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
+        # Photo taken (confirm still showing) -> speculative scan starts.
+        self.assertIn('fun photoTaken(context: Context, id: Long, file: File)', session)
+        self.assertIn('ProductionLabelScanner.scan(app, file, SystemClock.elapsedRealtime(), ScanInputSource.CAMERA)', session)
+        self.assertIn('fun onLabelPhotoTaken(requestId: Long, photoFile: File)', vm)
+        self.assertIn('scannerViewModel.onLabelPhotoTaken(requestId, photoFile)', add)
+        # Confirm adopts it; retake/dismiss cancels it.
+        self.assertIn('prescan?.await()', session)
+        self.assertIn('cancelSpeculative(id)', session)
+        # ...but the reported total is still measured from confirmation.
+        self.assertIn('elapsedMs = (SystemClock.elapsedRealtime() - started).coerceAtLeast(0)) else scanned', session)
 
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()

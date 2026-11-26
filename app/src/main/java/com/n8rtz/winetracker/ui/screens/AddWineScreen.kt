@@ -816,6 +816,10 @@ fun AddWineScreen(
                 holdConsumed = false
                 holdRequestId = requestId
                 holdPhotoPath = photoFile.absolutePath
+                // Start recognizing speculatively behind the confirm
+                // screen; retaking cancels it. The timer still starts
+                // at confirmation.
+                scannerViewModel.onLabelPhotoTaken(requestId, photoFile)
             },
             onShutter = requestScan,
             onGallery = {

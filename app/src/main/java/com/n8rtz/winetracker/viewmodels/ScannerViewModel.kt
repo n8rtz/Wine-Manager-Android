@@ -55,6 +55,9 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
     fun requestLabelScan(): Boolean = com.n8rtz.winetracker.scanner.ProductionLabelScanSession.requestCapture(getApplication())
     fun onLabelPhotoCaptured(requestId: Long, photoFile: File) =
         com.n8rtz.winetracker.scanner.ProductionLabelScanSession.captured(getApplication(), requestId, photoFile)
+    /** Speculative start: recognition begins while the user reviews the captured photo. */
+    fun onLabelPhotoTaken(requestId: Long, photoFile: File) =
+        com.n8rtz.winetracker.scanner.ProductionLabelScanSession.photoTaken(getApplication(), requestId, photoFile)
     fun onLabelPhotoSelected(uri: Uri): Boolean =
         com.n8rtz.winetracker.scanner.ProductionLabelScanSession.selected(getApplication(), uri)
     fun onLabelCaptureFailed(requestId: Long, error: Throwable) =
