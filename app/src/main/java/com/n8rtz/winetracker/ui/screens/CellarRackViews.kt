@@ -429,8 +429,24 @@ internal fun CellarRacks(
                                             tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                     }
                                 }
-                                Text("${rackItems.size} ${if (rackItems.size == 1) "wine" else "wines"}",
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                // Counts split by a centred vertical rule:
+                                // distinct wines on the left, total bottles
+                                // on the right.
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("${rackItems.size} ${if (rackItems.size == 1) "wine" else "wines"}",
+                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f))
+                                    Box(Modifier.width(1.dp).height(14.dp)
+                                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
+                                    val bottleCount = rackItems.sumOf { it.bottle.quantity }
+                                    Text("$bottleCount ${if (bottleCount == 1) "bottle" else "bottles"}",
+                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                        modifier = Modifier.weight(1f))
+                                }
                             }
                         }
                     }

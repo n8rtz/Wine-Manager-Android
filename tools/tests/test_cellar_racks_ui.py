@@ -7,6 +7,16 @@ APP = ROOT / "app/src/main/java/com/n8rtz/winetracker"
 
 
 class CellarRacksUiTests(unittest.TestCase):
+    def test_rack_tile_counts_split_by_centred_vertical_rule(self):
+        views = (APP / "ui/screens/CellarRackViews.kt").read_text()
+        # "X wines" on the left, a vertical separator in the middle,
+        # "Y bottles" (total quantity) on the right of the rack tile.
+        self.assertIn('"${rackItems.size} ${if (rackItems.size == 1) "wine" else "wines"}"', views)
+        self.assertIn("val bottleCount = rackItems.sumOf { it.bottle.quantity }", views)
+        self.assertIn('"$bottleCount ${if (bottleCount == 1) "bottle" else "bottles"}"', views)
+        self.assertIn("Box(Modifier.width(1.dp).height(14.dp)", views)
+        self.assertIn("textAlign = androidx.compose.ui.text.style.TextAlign.End", views)
+
     def test_rack_overview_has_no_redundant_heading_or_intro(self):
         source = (APP / "ui/screens/CellarRackViews.kt").read_text()
         self.assertNotIn('Text("Wine racks"', source)
