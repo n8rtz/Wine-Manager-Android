@@ -4,7 +4,11 @@ import android.content.Context
 import android.util.Log
 import com.yourapp.wine.capture.WineScannerServices
 import com.yourapp.wine.gazetteer.ProducerGazetteer
+import com.yourapp.wine.textlab.PaddleCandidates
+import com.yourapp.wine.textlab.PaddleTextDetector
+import com.yourapp.wine.textlab.PaddleTextRecognizer
 import com.yourapp.wine.textlab.TextLabWineExtraction
+import com.yourapp.wine.textlab.evidence.LabPostOcrModules
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -45,6 +49,16 @@ internal object GlinerScanWarmup {
         // for its scan lock; start that initialization now too so it
         // overlaps framing instead of preceding OCR.
         scope.launch { runCatching { WineScannerServices.get(app) } }
+        // OCR engine warm-up: ML Kit model load and both PP-OCRv6 ONNX
+        // session creations (detector 62 MB, recognizer 76 MB plus its
+        // dictionary) otherwise land inside the scan's OCR stage.
+        scope.launch {
+            runCatching { GlinerOcr.warmMlKit() }
+            val gate = WineScannerServices.nativeGate
+            val spec = PaddleCandidates.all.first()
+            runCatching { PaddleTextDetector.warm(app, gate, spec) }
+            runCatching { PaddleTextRecognizer.warm(app, gate, spec) }
+        }
     }
 
     private suspend fun prepareModel(app: Context): PreparedModel? = try {
@@ -68,7 +82,16 @@ internal object GlinerScanWarmup {
     private fun prepareWarmSession(app: Context): TextLabWineExtraction.WarmSession? {
         val session = TextLabWineExtraction.WarmSession(app)
         return try {
-            session.knowledgeBase()
+            val kb = session.knowledgeBase()
+            session.fillEngine(kb)
+            // Pre-build the evidence extractor (place-hierarchy snapshot
+            // and catalog indexes), anchor hybrid and producer repair:
+            // their construction otherwise lands inside the scan's
+            // evidence stage. Same arguments the post-process passes, so
+            // the warm session's cache hands back these very instances.
+            session.evidenceExtractor(kb, true, true, LabPostOcrModules.none.withIntegrated())
+            session.anchorHybrid(kb)
+            session.producerRepair(kb)
             if (session.cachedGazetteer(true) == null) {
                 session.cacheGazetteer(true, ProducerGazetteer.openExpanded(app), emptyMap())
             }

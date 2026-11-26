@@ -62,6 +62,14 @@ internal object GlinerOcr {
     /** App-scoped client: the recognizer is bundled, so constructing one per photo is waste. */
     private val mlKit by lazy { MlKitOcrEngine(WineScannerServices.nativeGate) }
 
+    /** Loads the bundled ML Kit model on a dummy image so the first real read does not pay it. */
+    suspend fun warmMlKit() {
+        val dummy=Bitmap.createBitmap(32,32,Bitmap.Config.ARGB_8888)
+        try { mlKit.recognize(dummy,"warm",ScanDeadline(SystemClock.elapsedRealtime()+30_000)) }
+        catch(cancel:CancellationException) { throw cancel }
+        catch(_:Exception) { }
+    }
+
     suspend fun recognize(context:Context,file:File,deadlineAtMs:Long,
         onStage:(LabelScanProgressStep)->Unit={}):Outcome =
         withContext(Dispatchers.Default) {

@@ -310,7 +310,15 @@ internal object GlinerLabRunner {
         // readings whenever the filter drops a token (side bottles,
         // medal stickers). Filling the filtered set directly yields the
         // same anchor the spatial stage would have rebuilt.
-        val effectiveRecords=TextLabBottleFilter.filterTokens(records).kept
+        val bottleKept=TextLabBottleFilter.filterTokens(records).kept
+        // Drop very weak readings before the fill/evidence stages: every
+        // field threshold downstream already ignores them (spans need
+        // >=.75 paddle / >=.60 ML Kit; even the vintage rescue needs
+        // >=.45), but each one still costs phrase generation and KB
+        // queries in the extractor. The bottle filter above saw the
+        // full set, so its geometry decisions are unchanged.
+        val effectiveRecords=bottleKept.filter { it.score>=0.45f }
+        if(effectiveRecords.size<bottleKept.size) notes += "post records: "+effectiveRecords.size+"/"+bottleKept.size+" at score >= 0.45"
         // Sub-stage timings inside FILL, surfaced in the scan diagnostics
         // (developer recognition-time popup) so a slow fill can be blamed
         // on data loads vs. computation.
@@ -326,7 +334,7 @@ internal object GlinerLabRunner {
         val engine=warm.evidenceExtractor(kb,true,true,modules)
         val hybrid=warm.anchorHybrid(kb)
         val repair=warm.producerRepair(kb)
-        var evidenceMs=SystemClock.elapsedRealtime()-segmentStart
+        detailStages += ScanStageTiming(ScanStage.EVIDENCE_SETUP,SystemClock.elapsedRealtime()-segmentStart)
         segmentStart=SystemClock.elapsedRealtime()
         var producers=warm.cachedGazetteer(true)?.gazetteer
         var ownsProducers=producers==null
@@ -366,8 +374,13 @@ internal object GlinerLabRunner {
         val failed=summary==null || summary["status"]=="failed"
         if(summary==null) notes += "No post-processing summary row was produced"
         if(summary!=null && summary["status"]=="failed") notes += "post-processing detail: ${summary["details"].orEmpty()}"
-        evidenceMs += SystemClock.elapsedRealtime()-segmentStart
-        detailStages += ScanStageTiming(ScanStage.EVIDENCE,evidenceMs)
+        detailStages += ScanStageTiming(ScanStage.EVIDENCE,SystemClock.elapsedRealtime()-segmentStart)
+        // The spatial stage already measured its gazetteer lookups into
+        // the summary row; surface them (a subset of EVIDENCE) so the
+        // remaining extractor computation is visible by subtraction.
+        val lookupMs=(summary?.get("producer_gazetteer_ms")?.toLongOrNull() ?: 0L)+
+            (summary?.get("wine_gazetteer_ms")?.toLongOrNull() ?: 0L)
+        if(lookupMs>0) detailStages += ScanStageTiming(ScanStage.PRODUCER_LOOKUPS,lookupMs)
         val valuesFound=PhoneCorpusMath.fields.count { fields[it].orEmpty().isNotBlank() }
         return PostOutcome(fields,states,if(failed) "failed" else "complete",
             if(failed) "Post-processing failed" else "$valuesFound/6 fields suggested before GLiNER field decisions",

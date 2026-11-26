@@ -274,7 +274,7 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
                 db.exec("PRAGMA foreign_keys=ON")
                 db.exec("PRAGMA journal_mode=DELETE")
                 db.exec("PRAGMA busy_timeout=30")
-                db.exec("PRAGMA cache_size=-2048")
+                db.exec("PRAGMA cache_size=-8192")
                 val version = db.connection.prepare("PRAGMA user_version").use { it.step(); it.getLong(0) }
                 if (version == 0L) db.transaction {
                     db.exec("CREATE TABLE place(id INTEGER PRIMARY KEY,name TEXT NOT NULL,name_norm TEXT NOT NULL,type TEXT NOT NULL CHECK(type IN ('country','region','subregion','appellation')),parent_id INTEGER REFERENCES place(id) DEFERRABLE INITIALLY DEFERRED,country_code TEXT NOT NULL)")

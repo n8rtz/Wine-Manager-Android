@@ -1155,4 +1155,6 @@ private fun scanStageLabel(stage: com.yourapp.wine.diagnostics.ScanStage): Strin
     com.yourapp.wine.diagnostics.ScanStage.BASE_FILL -> "Base field fill"
     com.yourapp.wine.diagnostics.ScanStage.EVIDENCE -> "Evidence & spatial analysis"
     com.yourapp.wine.diagnostics.ScanStage.FIELD_DECISIONS -> "GLiNER field decisions"
+    com.yourapp.wine.diagnostics.ScanStage.EVIDENCE_SETUP -> "Evidence setup (indexes)"
+    com.yourapp.wine.diagnostics.ScanStage.PRODUCER_LOOKUPS -> "Producer/wine lookups (in evidence)"
 }

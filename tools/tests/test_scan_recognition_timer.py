@@ -99,9 +99,34 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         # Bottle filter runs once, before the fill, in the GLiNER
         # post-process — the spatial stage no longer triggers a second
         # base fill on the filtered readings.
-        self.assertIn('val effectiveRecords=TextLabBottleFilter.filterTokens(records).kept', runner)
+        self.assertIn('val bottleKept=TextLabBottleFilter.filterTokens(records).kept', runner)
         self.assertIn('recordsOverride=effectiveRecords', runner)
         self.assertNotIn('recordsOverride=records)', runner)
+
+    def test_first_scan_warmup_covers_ocr_sessions_and_extractor(self):
+        warmup = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerScanWarmup.kt').read_text()
+        detector = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/PaddleTextDetector.kt').read_text()
+        recognizer = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/PaddleTextRecognizer.kt').read_text()
+        self.assertIn('suspend fun warm(', detector)
+        self.assertIn('suspend fun warm(', recognizer)
+        self.assertIn('PaddleTextDetector.warm(app, gate, spec)', warmup)
+        self.assertIn('PaddleTextRecognizer.warm(app, gate, spec)', warmup)
+        self.assertIn('GlinerOcr.warmMlKit()', warmup)
+        # Evidence extractor + friends are pre-built with the same
+        # arguments the post-process passes (warm-session cache key).
+        self.assertIn('session.evidenceExtractor(kb, true, true, LabPostOcrModules.none.withIntegrated())', warmup)
+        self.assertIn('session.anchorHybrid(kb)', warmup)
+        self.assertIn('session.producerRepair(kb)', warmup)
+
+    def test_post_records_have_score_floor_and_evidence_timing_split(self):
+        runner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabRunner.kt').read_text()
+        add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
+        self.assertIn('val effectiveRecords=bottleKept.filter { it.score>=0.45f }', runner)
+        self.assertIn('ScanStage.EVIDENCE_SETUP', runner)
+        self.assertIn('ScanStage.PRODUCER_LOOKUPS', runner)
+        self.assertIn('"Evidence setup (indexes)"', add)
+        kb = (ROOT / 'app/src/main/java/com/yourapp/wine/kb/SqliteWineKnowledgeBase.kt').read_text()
+        self.assertIn('PRAGMA cache_size=-8192', kb)
 
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()

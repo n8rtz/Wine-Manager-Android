@@ -23,6 +23,11 @@ internal object PaddleTextRecognizer {
         try { val old=session;session=null;loaded=null;dictionary=emptyList();old?.close() } finally { lease.close() }
     }
     private var dictionary:List<String> = emptyList()
+    /** Pre-creates the ONNX session and loads the dictionary so a scan does not pay it. */
+    suspend fun warm(context:Context,gate:NativeEngineGate,spec:PaddleCandidate=PaddleCandidates.all[0])=mutex.withLock {
+        val lease=gate.acquire()
+        try { open(context,spec) } finally { lease.close() }
+    }
     private fun open(context:Context,spec:PaddleCandidate):OrtSession {
         session?.let { check(loaded==spec.recognizer.sha) { "Previous candidate session was not released" };return it }
         val model=PaddleAssets.verified(context,spec.recognizer.asset,spec.recognizer.sha,spec.recognizer.bytes)

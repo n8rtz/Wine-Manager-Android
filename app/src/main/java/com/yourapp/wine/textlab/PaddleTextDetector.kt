@@ -22,6 +22,11 @@ internal object PaddleTextDetector {
         try { val old=session;session=null;loaded=null;old?.close() } finally { lease.close() }
     }
     data class Detection(val regions:PaddleRegions,val description:String)
+    /** Pre-creates the ONNX session (asset verify + createSession) so a scan does not pay it. */
+    suspend fun warm(context:Context,gate:NativeEngineGate,spec:PaddleCandidate=PaddleCandidates.all[0])=mutex.withLock {
+        val lease=gate.acquire()
+        try { open(context,spec) } finally { lease.close() }
+    }
     private fun open(context:Context,spec:PaddleCandidate):OrtSession {
         session?.let { check(loaded==spec.detector.sha) { "Previous candidate session was not released" };return it }
         val file=PaddleAssets.verified(context,spec.detector.asset,spec.detector.sha,spec.detector.bytes)
