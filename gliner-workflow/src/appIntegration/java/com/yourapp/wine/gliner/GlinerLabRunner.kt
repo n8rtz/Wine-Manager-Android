@@ -95,7 +95,7 @@ internal data class GlinerLabImageResult(
  */
 internal object GlinerLabRunner {
     /** Production evidence cap: a label whose evidence extraction runs past this falls back to the base fill + resolvers. Lab runs keep the extractor default. */
-    const val PRODUCTION_EVIDENCE_BUDGET_MS=4_000L
+    const val PRODUCTION_EVIDENCE_BUDGET_MS=2_500L
     const val OCR_BUDGET_MS=60_000L
     const val GLINER_BUDGET_MS=30_000L
     const val POST_BUDGET_MS=60_000L
@@ -410,6 +410,14 @@ internal object GlinerLabRunner {
         val lookupMs=(summary?.get("producer_gazetteer_ms")?.toLongOrNull() ?: 0L)+
             (summary?.get("wine_gazetteer_ms")?.toLongOrNull() ?: 0L)
         if(lookupMs>0) detailStages += ScanStageTiming(ScanStage.PRODUCER_LOOKUPS,lookupMs)
+        // The evidence preview copies its own summary into the journal
+        // before the spatial summary overwrites the stage name; its
+        // work_ms is extractor + hybrid time. Surfacing it splits the
+        // EVIDENCE stage into extraction vs the spatial resolver tail
+        // (phrase proposals, producer/wine resolution, near-match).
+        val extractMs=journal.rows.filter { it["stage"]=="gliner_evidence_summary" }
+            .firstOrNull()?.get("evidence_extract_ms")?.toLongOrNull() ?: 0L
+        if(extractMs>0) detailStages += ScanStageTiming(ScanStage.EVIDENCE_EXTRACT,extractMs)
         val valuesFound=PhoneCorpusMath.fields.count { fields[it].orEmpty().isNotBlank() }
         return PostOutcome(fields,states,if(failed) "failed" else "complete",
             if(failed) "Post-processing failed" else "$valuesFound/6 fields suggested before GLiNER field decisions",

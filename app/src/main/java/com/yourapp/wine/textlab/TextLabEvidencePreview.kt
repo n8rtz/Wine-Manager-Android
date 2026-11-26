@@ -78,6 +78,8 @@ internal object TextLabEvidencePreview {
             values["field_input_lines"]=result.graph.observations.size.toString()
             values["field_values_found"]=FieldId.entries.count { values[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
             values["work_ms"]=(result.elapsedMs+hybridMs).toString()
+            values["evidence_extract_ms"]=result.elapsedMs.toString()
+            values["evidence_hybrid_ms"]=hybridMs.toString()
             values["role_diagnostics"]=fill.postProcessing.joinToString("\n")
             // Separate bounded diagnostic rows preserve the graph without replacing original recognition rows.
             result.graph.observations.forEach { o -> journal.add("experimental_evidence","evidence_observation",values=mapOf(

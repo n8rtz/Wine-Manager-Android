@@ -158,7 +158,10 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertEqual(spatial.count('budgetMs=evidenceBudgetMs'), 2)
         # Production (deadline-bound) runs cap evidence at 4s; lab runs
         # (no deadline) keep the extractor default.
-        self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=4_000L', runner)
+        self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=2_500L', runner)
+        self.assertIn('ScanStage.EVIDENCE_EXTRACT,extractMs', runner)
+        self.assertIn('values["evidence_extract_ms"]=result.elapsedMs.toString()',
+            (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text())
         self.assertIn('if(deadlineAtMs==Long.MAX_VALUE) com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS else PRODUCTION_EVIDENCE_BUDGET_MS', runner)
         # Scan awaits only the KB+gazetteer core; extractor pre-build is
         # background, and warm-up starts at app launch.
