@@ -12,7 +12,7 @@ internal object TextLabEvidencePreview {
         placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off,
         allowWineTitlePairs=labModules.verticalWineTitlePairs,
         modules=labModules)
-    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false,allowHybridVintageFallback:Boolean=true,appellationFallbackEngines:Int=0,deepestAppellationFallback:Boolean=false,styleAppellationWine:Boolean=false,producerAnchorFallback:Boolean=false,geographyAppellationWine:Boolean=false):EvidenceResult? {
+    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false,allowHybridVintageFallback:Boolean=true,appellationFallbackEngines:Int=0,deepestAppellationFallback:Boolean=false,styleAppellationWine:Boolean=false,producerAnchorFallback:Boolean=false,geographyAppellationWine:Boolean=false,budgetMs:Long=EvidenceExtractor.DEFAULT_BUDGET_MS):EvidenceResult? {
         if(journal.rows.any { it["stage"]=="evidence_summary" }) return null
         val values=mutableMapOf("post_processing_version" to if(useProducerRepair) ProducerRepair.VERSION else if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
             "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer; populated vintage preserved, otherwise validated experimental vintage may fill; rules-001 wine/origin; heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
@@ -26,7 +26,7 @@ internal object TextLabEvidencePreview {
                 check(FieldId.entries.all { baseline.containsKey(it.name.lowercase(java.util.Locale.ROOT)) }) { "Incomplete baseline summary" }
             }
             val records=recordsOverride ?: TextLabFormPreview.records(journal)
-            val result=engine.extract(records,year,exactGeographyFastPath=exactGeographyFastPath)
+            val result=engine.extract(records,year,budgetMs,exactGeographyFastPath=exactGeographyFastPath)
             val fill=result.fill
             for(field in FieldId.entries) {
                 val key=field.name.lowercase(java.util.Locale.ROOT);val candidate=fill.fields.getValue(field)

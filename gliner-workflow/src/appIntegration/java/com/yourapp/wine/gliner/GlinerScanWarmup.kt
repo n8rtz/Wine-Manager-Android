@@ -38,13 +38,24 @@ internal object GlinerScanWarmup {
 
     private var modelJob: Deferred<PreparedModel?>? = null
     private var warmJob: Deferred<TextLabWineExtraction.WarmSession?>? = null
+    private var prepJob: Deferred<Unit>? = null
 
     /** Idempotent: safe to call on every Add Wine open, capture and import. */
     @Synchronized
     fun begin(context: Context) {
         val app = context.applicationContext
         if (modelJob == null) modelJob = scope.async { prepareModel(app) }
-        if (warmJob == null) warmJob = scope.async { prepareWarmSession(app) }
+        if (warmJob == null) {
+            val sessionJob = scope.async { prepareWarmSession(app) }
+            warmJob = sessionJob
+            // Extractor/hybrid/repair pre-builds continue in the
+            // background: the scan picks up the session as soon as its
+            // KB+gazetteer core is ready instead of waiting for these.
+            prepJob = scope.async {
+                val session = runCatching { sessionJob.await() }.getOrNull() ?: return@async
+                runCatching { prebuildPostProcessors(session) }
+            }
+        }
         // The GLiNER OCR path also awaits the app-scoped legacy services
         // for its scan lock; start that initialization now too so it
         // overlaps framing instead of preceding OCR.
@@ -79,19 +90,12 @@ internal object GlinerScanWarmup {
         null
     }
 
+    /** Core session: KB, fill engine and expanded gazetteer — what a scan awaits. */
     private fun prepareWarmSession(app: Context): TextLabWineExtraction.WarmSession? {
         val session = TextLabWineExtraction.WarmSession(app)
         return try {
             val kb = session.knowledgeBase()
             session.fillEngine(kb)
-            // Pre-build the evidence extractor (place-hierarchy snapshot
-            // and catalog indexes), anchor hybrid and producer repair:
-            // their construction otherwise lands inside the scan's
-            // evidence stage. Same arguments the post-process passes, so
-            // the warm session's cache hands back these very instances.
-            session.evidenceExtractor(kb, true, true, LabPostOcrModules.none.withIntegrated())
-            session.anchorHybrid(kb)
-            session.producerRepair(kb)
             if (session.cachedGazetteer(true) == null) {
                 session.cacheGazetteer(true, ProducerGazetteer.openExpanded(app), emptyMap())
             }
@@ -105,6 +109,21 @@ internal object GlinerScanWarmup {
             Log.d(TAG, "GlinerScanWarmup: warm session failed (${error.javaClass.simpleName}); scan will open its own")
             null
         }
+    }
+
+    /**
+     * Background-only: pre-build the evidence extractor (place-hierarchy
+     * snapshot and catalog indexes), anchor hybrid and producer repair
+     * with the same arguments the post-process passes, so the warm
+     * session's cache hands back these very instances. Never awaited by
+     * a scan; if it loses the race, the post-process builds them itself.
+     */
+    private fun prebuildPostProcessors(session: TextLabWineExtraction.WarmSession) {
+        val kb = session.knowledgeBase()
+        session.evidenceExtractor(kb, true, true, LabPostOcrModules.none.withIntegrated())
+        session.anchorHybrid(kb)
+        session.producerRepair(kb)
+        Log.d(TAG, "GlinerScanWarmup: post-processors pre-built")
     }
 
     /**
@@ -147,6 +166,8 @@ internal object GlinerScanWarmup {
     fun discard() {
         val models = synchronized(this) { modelJob.also { modelJob = null } }
         val sessions = synchronized(this) { warmJob.also { warmJob = null } }
+        val prep = synchronized(this) { prepJob.also { prepJob = null } }
+        prep?.cancel()
         if (models == null && sessions == null) return
         scope.launch {
             models?.let { job -> runCatching { job.await()?.model?.close() } }

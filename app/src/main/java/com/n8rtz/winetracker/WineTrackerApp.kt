@@ -13,5 +13,11 @@ class WineTrackerApp : Application() {
     override fun onCreate() {
         super.onCreate()
         GlinerModelPrewarm.schedule(this) { ProductionLabelScanSession.state.value.isBusy }
+        // Start the first-scan warm-up (ONNX session, KB/gazetteer,
+        // OCR sessions, evidence extractor) at app launch: most users
+        // scan once per session, so the work should already be done —
+        // not merely started — when they open Add Wine. All async on
+        // background threads; nothing blocks startup.
+        ProductionLabelScanSession.warmUp(this)
     }
 }

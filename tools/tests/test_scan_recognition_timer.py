@@ -146,6 +146,26 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertIn('"Reader pickup"', add)
         self.assertIn('"Field mapping"', add)
 
+    def test_evidence_budget_cap_and_warmup_split(self):
+        preview = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
+        spatial = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
+        runner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabRunner.kt').read_text()
+        warmup = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerScanWarmup.kt').read_text()
+        app = (APP / 'WineTrackerApp.kt').read_text()
+        self.assertIn('budgetMs:Long=EvidenceExtractor.DEFAULT_BUDGET_MS', preview)
+        self.assertIn('engine.extract(records,year,budgetMs,exactGeographyFastPath=exactGeographyFastPath)', preview)
+        self.assertIn('evidenceBudgetMs:Long=com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS', spatial)
+        self.assertEqual(spatial.count('budgetMs=evidenceBudgetMs'), 2)
+        # Production (deadline-bound) runs cap evidence at 4s; lab runs
+        # (no deadline) keep the extractor default.
+        self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=4_000L', runner)
+        self.assertIn('if(deadlineAtMs==Long.MAX_VALUE) com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS else PRODUCTION_EVIDENCE_BUDGET_MS', runner)
+        # Scan awaits only the KB+gazetteer core; extractor pre-build is
+        # background, and warm-up starts at app launch.
+        self.assertIn('private fun prebuildPostProcessors', warmup)
+        self.assertIn('prepJob = scope.async', warmup)
+        self.assertIn('ProductionLabelScanSession.warmUp(this)', app)
+
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
         self.assertIn('val showScanTimer = ScanTimerSettings.isEnabled(context)', add)

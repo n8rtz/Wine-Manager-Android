@@ -94,6 +94,8 @@ internal data class GlinerLabImageResult(
  * Lab v7 and the legacy production baseline remain separate.
  */
 internal object GlinerLabRunner {
+    /** Production evidence cap: a label whose evidence extraction runs past this falls back to the base fill + resolvers. Lab runs keep the extractor default. */
+    const val PRODUCTION_EVIDENCE_BUDGET_MS=4_000L
     const val OCR_BUDGET_MS=60_000L
     const val GLINER_BUDGET_MS=30_000L
     const val POST_BUDGET_MS=60_000L
@@ -182,7 +184,8 @@ internal object GlinerLabRunner {
             val postStarted=SystemClock.elapsedRealtime()
             check(postStarted<deadlineAtMs) { "Scan deadline reached before field extraction" }
             onStage(LabelScanProgressStep.FILL_DETAILS)
-            val post=postProcess(context,records,warm,modules,labelled)
+            val post=postProcess(context,records,warm,modules,labelled,
+                evidenceBudgetMs=if(deadlineAtMs==Long.MAX_VALUE) com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS else PRODUCTION_EVIDENCE_BUDGET_MS)
             postMs=SystemClock.elapsedRealtime()-postStarted
             check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached during field extraction" }
             val laneHints=labelled.entities.map { GlinerFieldHint(it.lane,it.text,it.score) }
@@ -291,6 +294,7 @@ internal object GlinerLabRunner {
         warm:TextLabWineExtraction.WarmSession,
         modules:LabPostOcrModules,
         labelled:GlinerLabelResult,
+        evidenceBudgetMs:Long=com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS,
     ):PostOutcome {
         val year=Year.now().value
         val journal=TextLabJournal(setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true)
@@ -384,7 +388,7 @@ internal object GlinerLabRunner {
             }
             TextLabSpatialPreview.append(journal,engine,hybrid,repair,year,producers,unavailable,lookupBudget,
                 candidate="gliner_lane",stagePrefix="gliner_",fillEngine=fill,labModules=modules,
-                policy=ProducerResolver.Policy.singleReading,recordsOverride=effectiveRecords)
+                policy=ProducerResolver.Policy.singleReading,recordsOverride=effectiveRecords,evidenceBudgetMs=evidenceBudgetMs)
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) {
             notes += "spatial contender error: ${error.javaClass.simpleName}: ${error.message}"
