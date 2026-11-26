@@ -489,7 +489,9 @@ internal fun CellarRacks(
                                         modifier = Modifier.size(56.dp))
                                 }
                                 Column(Modifier.padding(horizontal = 10.dp, vertical = 9.dp)) {
-                                    Text("New Rack", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                    Text("New Rack", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth())
                                 }
                             }
                         }
