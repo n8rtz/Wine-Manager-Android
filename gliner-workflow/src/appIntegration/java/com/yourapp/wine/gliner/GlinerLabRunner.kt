@@ -76,6 +76,8 @@ internal data class GlinerLabImageResult(
     val workingHeight:Int = 1,
     val peakWorkingBitmaps:Int = 0,
     val engineReadings:Map<String,Int> = emptyMap(),
+    /** True when OCR read a crop around the detected text rather than the full photo. */
+    val croppedToTextRegion:Boolean = false,
 ) {
     val complete:Boolean get() = status=="complete" && eligible && errorCount==0
 }
@@ -238,7 +240,7 @@ internal object GlinerLabRunner {
                 fieldDecisions=decision.changes,
                 originalWidth=ocr.originalWidth,originalHeight=ocr.originalHeight,
                 workingWidth=ocr.workingWidth,workingHeight=ocr.workingHeight,
-                peakWorkingBitmaps=ocr.peakWorkingBitmaps,engineReadings=ocr.engineReadings,
+                peakWorkingBitmaps=ocr.peakWorkingBitmaps,engineReadings=ocr.engineReadings,croppedToTextRegion=ocr.croppedToTextRegion,
                 notes=buildString {
                     appendLine(ocr.description)
                     appendLine("readings: "+ocr.engineReadings.entries.joinToString(" · ") { "${it.key} ${it.value} lines" })

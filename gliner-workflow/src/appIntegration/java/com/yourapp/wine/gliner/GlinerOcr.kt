@@ -2,6 +2,7 @@ package com.yourapp.wine.gliner
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.RectF
 import android.os.SystemClock
 import com.yourapp.wine.capture.BitmapWorkspace
@@ -54,6 +55,8 @@ internal object GlinerOcr {
         val workingWidth:Int,
         val workingHeight:Int,
         val peakWorkingBitmaps:Int,
+        /** True when both engines read a crop around the detected text instead of the full photo. */
+        val croppedToTextRegion:Boolean=false,
     )
 
     /** App-scoped client: the recognizer is bundled, so constructing one per photo is waste. */
@@ -72,9 +75,22 @@ internal object GlinerOcr {
                     val bitmap=decoded.bitmap
                     val deadline=ScanDeadline(deadlineAtMs)
                     onStage(LabelScanProgressStep.READ_TEXT)
+                    // Crop before OCR: the Paddle detector (which runs
+                    // anyway) localizes the text, and both engines then
+                    // read only the label area instead of the full photo —
+                    // fewer pixels for ML Kit, and no background text
+                    // (shelves, neighbouring bottles) in either read. The
+                    // detector is not run twice: its regions, shifted into
+                    // crop coordinates, drive the line recognizer.
+                    val detection=detectRegions(context,bitmap,workspace,spec)
+                    val crop=textRegionCrop(detection,bitmap.width,bitmap.height)
+                    val ocrBitmap=if(crop!=null) workspace.own(Bitmap.createBitmap(bitmap,crop[0],crop[1],crop[2],crop[3])) else bitmap
+                    val regions=detection.regions.lines.map { region ->
+                        if(crop==null) region else region.copy(quadBase=region.quadBase.map { point -> PointF(point.x-crop[0],point.y-crop[1]) })
+                    }
                     val (mlKitReadings,paddleReadings)=coroutineScope {
-                        val mlkit=async(Dispatchers.Default) { readMlKit(bitmap,deadline) }
-                        val paddle=async(Dispatchers.Default) { readPaddle(context,bitmap,workspace,spec,deadlineAtMs) }
+                        val mlkit=async(Dispatchers.Default) { readMlKit(ocrBitmap,deadline) }
+                        val paddle=async(Dispatchers.Default) { readPaddle(context,ocrBitmap,workspace,spec,deadlineAtMs,regions) }
                         val first=mlkit.await()
                         // The reads run together; only report the checking phase when the second
                         // read is still running, so a fast pair never flashes a stale step.
@@ -85,9 +101,10 @@ internal object GlinerOcr {
                     val engineReadings=linkedMapOf(MLKIT_ID to mlKitReadings.size,PADDLE_ID to paddleReadings.size)
                     val elapsed=SystemClock.elapsedRealtime()-started
                     Outcome(fused,mlKitReadings+paddleReadings,elapsed,"${spec.detector.name} + ${spec.recognizer.name} = ${paddleReadings.size} lines; "+
-                        "ML Kit Latin = ${mlKitReadings.size} lines; fused = ${fused.size} lines"+
+                        "ML Kit Latin = ${mlKitReadings.size} lines; fused = ${fused.size} lines; "+
+                        (if(crop!=null) "crop ${crop[2]}x${crop[3]} @ ${crop[0]},${crop[1]} of ${bitmap.width}x${bitmap.height}" else "full frame")+
                         (if(elapsed>deadlineAtMs-started) " · budget reached" else ""),engineReadings,
-                        decoded.origW,decoded.origH,bitmap.width,bitmap.height,workspace.peakCount)
+                        decoded.origW,decoded.origH,ocrBitmap.width,ocrBitmap.height,workspace.peakCount,crop!=null)
                 }
             }
         }
@@ -105,23 +122,60 @@ internal object GlinerOcr {
         } catch(cancel:CancellationException) { throw cancel }
         catch(_:Exception) { emptyList() }
 
-    /** Pinned PP-OCRv6 Medium detector + line recognizer, CTC posterior per line. */
+    /** Pinned PP-OCRv6 Medium detector pass; its regions also define the OCR crop. */
+    private suspend fun detectRegions(
+        context:Context,
+        bitmap:Bitmap,
+        workspace:BitmapWorkspace,
+        spec:com.yourapp.wine.textlab.PaddleCandidate,
+    ):PaddleTextDetector.Detection {
+        val gate=WineScannerServices.nativeGate
+        try {
+            return PaddleTextDetector.detect(context,bitmap,workspace,gate,spec)
+        } finally {
+            withContext(NonCancellable) { PaddleTextDetector.release(gate) }
+        }
+    }
+
+    /**
+     * Crop around the union of detected text regions, expanded by a margin
+     * so line edges and accents survive. Returns [left, top, width, height],
+     * or null when cropping is pointless (no text, or the text already spans
+     * essentially the whole photo) or suspicious (a speck of text).
+     */
+    private fun textRegionCrop(detection:PaddleTextDetector.Detection,width:Int,height:Int):IntArray? {
+        val lines=detection.regions.lines
+        if(lines.isEmpty() || width<=0 || height<=0) return null
+        var left=Float.MAX_VALUE; var top=Float.MAX_VALUE; var right=0f; var bottom=0f
+        lines.forEach { region -> region.quadBase.forEach { point ->
+            left=minOf(left,point.x); top=minOf(top,point.y); right=maxOf(right,point.x); bottom=maxOf(bottom,point.y)
+        } }
+        val unionW=right-left; val unionH=bottom-top
+        if(unionW<=0f || unionH<=0f) return null
+        val marginX=unionW*0.10f; val marginY=unionH*0.10f
+        val cropLeft=maxOf(0f,left-marginX).toInt()
+        val cropTop=maxOf(0f,top-marginY).toInt()
+        val cropRight=minOf(width.toFloat(),right+marginX).toInt().coerceAtLeast(cropLeft+1)
+        val cropBottom=minOf(height.toFloat(),bottom+marginY).toInt().coerceAtLeast(cropTop+1)
+        val cropW=cropRight-cropLeft; val cropH=cropBottom-cropTop
+        val areaFraction=cropW.toDouble()*cropH/(width.toDouble()*height)
+        if(areaFraction>0.92 || areaFraction<0.03) return null
+        return intArrayOf(cropLeft,cropTop,cropW,cropH)
+    }
+
+    /** Pinned PP-OCRv6 Medium line recognizer over pre-detected regions, CTC posterior per line. */
     private suspend fun readPaddle(
         context:Context,
         bitmap:Bitmap,
         workspace:BitmapWorkspace,
         spec:com.yourapp.wine.textlab.PaddleCandidate,
         deadlineAtMs:Long,
+        regions:List<com.yourapp.wine.textlab.PaddleRegion>,
     ):List<GlinerFusion.Reading> {
         val gate=WineScannerServices.nativeGate
         val lines=mutableListOf<GlinerFusion.Reading>()
         try {
-            val detection=try {
-                PaddleTextDetector.detect(context,bitmap,workspace,gate,spec)
-            } finally {
-                withContext(NonCancellable) { PaddleTextDetector.release(gate) }
-            }
-            for(region in detection.regions.lines) {
+            for(region in regions) {
                 if(SystemClock.elapsedRealtime()>=deadlineAtMs) break
                 val box=normalizedBox(region.quadBase,bitmap.width,bitmap.height)
                 var text=""

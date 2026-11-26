@@ -64,6 +64,28 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         self.assertGreaterEqual(session.count('warmUp(app)'),2)
         self.assertIn('GlinerScanWarmup.discard()',session)
 
+    def test_ocr_crops_to_detected_text_before_reading(self):
+        ocr=self.text(GL/'GlinerOcr.kt')
+        runner=self.text(GL/'GlinerLabRunner.kt')
+        scanner=self.text(GL/'GlinerProductionScanner.kt')
+        # Detection runs first and its regions define the crop; the
+        # detector is not run a second time for the recognizer.
+        self.assertLess(ocr.index('detectRegions(context,bitmap,workspace,spec)'),
+                        ocr.index('readMlKit(ocrBitmap,deadline)'))
+        self.assertIn('val crop=textRegionCrop(detection,bitmap.width,bitmap.height)',ocr)
+        self.assertIn('Bitmap.createBitmap(bitmap,crop[0],crop[1],crop[2],crop[3])',ocr)
+        self.assertEqual(ocr.count('PaddleTextDetector.detect'),1)
+        # Both engines read the crop; Paddle regions are shifted into
+        # crop coordinates rather than re-detected.
+        self.assertIn('readPaddle(context,ocrBitmap,workspace,spec,deadlineAtMs,regions)',ocr)
+        self.assertIn('PointF(point.x-crop[0],point.y-crop[1])',ocr)
+        # Cropping is skipped when text spans the frame or is a speck.
+        self.assertIn('if(areaFraction>0.92 || areaFraction<0.03) return null',ocr)
+        self.assertIn('val marginX=unionW*0.10f',ocr)
+        # Diagnostics say which path a scan actually took.
+        self.assertIn('croppedToTextRegion=ocr.croppedToTextRegion',runner)
+        self.assertIn('if(result.croppedToTextRegion) "text_region_crop" else "full_photo_gliner"',scanner)
+
     def test_normal_review_does_not_add_model_specific_ui(self):
         adapter=self.text(GL/'GlinerProductionAdapter.kt')
         router=self.text(APP/'com/yourapp/wine/capture/ProductionLabelScanner.kt')
