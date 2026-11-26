@@ -92,7 +92,7 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn("ProducerResolver.Policy.singleReading", runner)
         self.assertIn("LabPostOcrModules.none.withIntegrated()", runner)
         self.assertIn('candidate="gliner_lane"', runner)
-        self.assertIn("recordsOverride=records", runner)
+        self.assertIn("recordsOverride=effectiveRecords", runner)
 
     def test_spatial_pipeline_accepts_grouped_lane_records(self):
         spatial = self.read(APP / "java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt")

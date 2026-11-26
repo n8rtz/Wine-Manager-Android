@@ -12,6 +12,7 @@ import com.yourapp.wine.kb.BundledGrapes
 import com.yourapp.wine.kb.BundledOrigins
 import com.yourapp.wine.kb.BundledWineStyles
 import com.yourapp.wine.phonecorpus.PhoneCorpusMath
+import com.yourapp.wine.textlab.TextLabBottleFilter
 import com.yourapp.wine.textlab.TextLabBudgets
 import com.yourapp.wine.textlab.TextLabFormPreview
 import com.yourapp.wine.textlab.TextLabJournal
@@ -304,6 +305,12 @@ internal object GlinerLabRunner {
             "lab_modules" to modules.signatureKey(),
         ))
         val notes=mutableListOf<String>()
+        // Run the bottle filter once, up front: the spatial contender
+        // would otherwise recompute the whole base fill on the filtered
+        // readings whenever the filter drops a token (side bottles,
+        // medal stickers). Filling the filtered set directly yields the
+        // same anchor the spatial stage would have rebuilt.
+        val effectiveRecords=TextLabBottleFilter.filterTokens(records).kept
         // Sub-stage timings inside FILL, surfaced in the scan diagnostics
         // (developer recognition-time popup) so a slow fill can be blamed
         // on data loads vs. computation.
@@ -313,7 +320,7 @@ internal object GlinerLabRunner {
         detailStages += ScanStageTiming(ScanStage.KB_OPEN,SystemClock.elapsedRealtime()-segmentStart)
         segmentStart=SystemClock.elapsedRealtime()
         val fill=warm.fillEngine(kb)
-        TextLabFormPreview.append(journal,fill,year,recordsOverride=records)
+        TextLabFormPreview.append(journal,fill,year,recordsOverride=effectiveRecords)
         detailStages += ScanStageTiming(ScanStage.BASE_FILL,SystemClock.elapsedRealtime()-segmentStart)
         segmentStart=SystemClock.elapsedRealtime()
         val engine=warm.evidenceExtractor(kb,true,true,modules)
@@ -345,7 +352,7 @@ internal object GlinerLabRunner {
             }
             TextLabSpatialPreview.append(journal,engine,hybrid,repair,year,producers,unavailable,lookupBudget,
                 candidate="gliner_lane",stagePrefix="gliner_",fillEngine=fill,labModules=modules,
-                policy=ProducerResolver.Policy.singleReading,recordsOverride=records)
+                policy=ProducerResolver.Policy.singleReading,recordsOverride=effectiveRecords)
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) {
             notes += "spatial contender error: ${error.javaClass.simpleName}: ${error.message}"

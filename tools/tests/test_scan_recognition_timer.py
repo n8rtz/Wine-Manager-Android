@@ -89,6 +89,20 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertGreaterEqual(kb.count('producerHitCache.clear()'), 2)
         self.assertIn('aliasCache.clear()', kb)
 
+    def test_gazetteer_lookups_memoized_and_fill_runs_once(self):
+        gaz = (ROOT / 'app/src/main/java/com/yourapp/wine/gazetteer/ProducerGazetteer.kt').read_text()
+        runner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabRunner.kt').read_text()
+        self.assertIn('private val lookupCache = HashMap<String, List<ProducerResolver.Entity>>()', gaz)
+        self.assertIn('private val wineLookupCache = HashMap<String, List<LinkedWineResolver.Wine>>()', gaz)
+        self.assertIn('lookupCache[cacheKey]?.let { return it }', gaz)
+        self.assertIn('wineLookupCache[cacheKey]?.let { return it }', gaz)
+        # Bottle filter runs once, before the fill, in the GLiNER
+        # post-process — the spatial stage no longer triggers a second
+        # base fill on the filtered readings.
+        self.assertIn('val effectiveRecords=TextLabBottleFilter.filterTokens(records).kept', runner)
+        self.assertIn('recordsOverride=effectiveRecords', runner)
+        self.assertNotIn('recordsOverride=records)', runner)
+
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
         self.assertIn('val showScanTimer = ScanTimerSettings.isEnabled(context)', add)
