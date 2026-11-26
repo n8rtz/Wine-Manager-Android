@@ -24,6 +24,22 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertIn('ScanTimerSettings.setEnabled(context, enabled)', profile)
         self.assertIn('checked = showScanTimer', profile)
 
+    def test_completion_popup_lists_each_step_with_copy_button(self):
+        add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
+        store = (APP / 'scanner/ScanTimerSettings.kt').read_text()
+        self.assertIn('fun formatDurationWithMs(elapsedMs: Long): String', store)
+        # Popup opens when a scan completes and the toggle is on.
+        self.assertIn('if (showScanTimer) showScanTimingsPopup = true', add)
+        self.assertIn('AlertDialog(', add)
+        self.assertIn('title = { Text("Recognition time") }', add)
+        # Every diagnostics stage is listed, plus a total.
+        self.assertIn('report.diagnostics.stages.map { timing ->', add)
+        self.assertIn('"Total: ${ScanTimerSettings.formatDurationWithMs(report.elapsedMs)}"', add)
+        self.assertIn('private fun scanStageLabel(', add)
+        # Copy button puts the same text on the clipboard.
+        self.assertIn('clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(shareText))', add)
+        self.assertIn('Text("Copy to clipboard")', add)
+
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
         self.assertIn('val showScanTimer = ScanTimerSettings.isEnabled(context)', add)

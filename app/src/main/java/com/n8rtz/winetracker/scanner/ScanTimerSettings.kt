@@ -31,4 +31,11 @@ object ScanTimerSettings {
         return if (ms < 1_000) "$ms ms"
         else String.format(Locale.US, "%.1f s", ms / 1_000.0)
     }
+
+    /** Seconds and milliseconds together: "7.3 s (7312 ms)". */
+    fun formatDurationWithMs(elapsedMs: Long): String {
+        val ms = elapsedMs.coerceAtLeast(0)
+        return if (ms < 1_000) "$ms ms"
+        else String.format(Locale.US, "%.1f s (%d ms)", ms / 1_000.0, ms)
+    }
 }
