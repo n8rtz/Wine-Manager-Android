@@ -47,7 +47,7 @@ internal object GlinerScanWarmup {
         scope.launch { runCatching { WineScannerServices.get(app) } }
     }
 
-    private fun prepareModel(app: Context): PreparedModel? = try {
+    private suspend fun prepareModel(app: Context): PreparedModel? = try {
         val status = GlinerBundle.status(app)
         val file = status.model
         if (!status.ready || !status.int4 || status.config == null || file == null) {

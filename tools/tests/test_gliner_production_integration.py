@@ -49,6 +49,7 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         # Warm-up pre-opens the cold, per-scan pieces: ONNX session,
         # knowledge base and expanded producer gazetteer.
         self.assertIn('GlinerOnnxModel.open(app, status, GlinerLaneConfig())',warmup)
+        self.assertIn('private suspend fun prepareModel',warmup)
         self.assertIn('ProducerGazetteer.openExpanded(app)',warmup)
         self.assertIn('session.knowledgeBase()',warmup)
         # The scanner consumes the prepared pieces single-use and still
