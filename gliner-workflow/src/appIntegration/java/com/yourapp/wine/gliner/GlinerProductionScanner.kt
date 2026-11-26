@@ -67,7 +67,9 @@ internal object GlinerProductionScanner {
             val opened=GlinerScanWarmup.takeModel(status) ?: GlinerOnnxModel.open(context,status,laneConfig)
             model=opened
             val readyMs=SystemClock.elapsedRealtime()
+            val warmStart=SystemClock.elapsedRealtime()
             val session=GlinerScanWarmup.takeWarmSession() ?: TextLabWineExtraction.WarmSession(context)
+            val warmPickupMs=SystemClock.elapsedRealtime()-warmStart
             warm=session
             val result=GlinerLabRunner.runProduction(context,photo,opened,session,deadlineAtMs,onStage)
             if(result.status!="complete") return@withContext unavailable("GLiNER workflow: ${result.status} ${oneLine(result.message)}",started,source)
@@ -80,14 +82,18 @@ internal object GlinerProductionScanner {
                 quadSource=if(result.croppedToTextRegion) "text_region_crop" else "full_photo_gliner",lastStage=ScanStage.FILL,
                 detailStages=result.detailStages,
                 stages=listOf(ScanStageTiming(ScanStage.INITIALIZE,(readyMs-started).coerceAtLeast(0)),
+                    ScanStageTiming(ScanStage.WARM_SESSION,warmPickupMs),
                     ScanStageTiming(ScanStage.OCR,result.ocrMs),ScanStageTiming(ScanStage.GLINER,result.glinerMs),
-                    ScanStageTiming(ScanStage.FILL,result.postMs)),
+                    ScanStageTiming(ScanStage.FILL,result.postMs),ScanStageTiming(ScanStage.FIELD_ADAPTER,adapterMs)),
                 engines=result.engineReadings.map { (id,count) -> ScanEngineStatus(id,count>0,
                     if(count>0) "$count readings" else "No readings; engine may have failed or found no text") } +
                     ScanEngineStatus("gliner-small-int4",true,opened.signature),
                 reads=tokens.take(80).map { ScanReadSample(it.textRaw,it.score,it.scoreIsEstimated,it.engineId,it.variantId,"FULL_PHOTO",true) },
                 totalReadings=tokens.size,mappingReceived=tokens.size)
-            val fill=GlinerProductionAdapter.fill(result.fields,result.fieldStates,result.fieldDecisions).let { base ->
+            val adapterStart=SystemClock.elapsedRealtime()
+            val adapted=GlinerProductionAdapter.fill(result.fields,result.fieldStates,result.fieldDecisions)
+            val adapterMs=SystemClock.elapsedRealtime()-adapterStart
+            val fill=adapted.let { base ->
                 // A missing OCR reading is not evidence of agreement. Keep uncertain values
                 // reviewable, without exposing the implementation as a separate scan experience.
                 if(result.engineReadings.values.any { it==0 }) base.copy(fields=base.fields.mapValues { (_,candidate) ->

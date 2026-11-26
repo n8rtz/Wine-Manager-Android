@@ -330,7 +330,31 @@ internal object GlinerLabRunner {
         val fill=warm.fillEngine(kb)
         TextLabFormPreview.append(journal,fill,year,recordsOverride=effectiveRecords)
         detailStages += ScanStageTiming(ScanStage.BASE_FILL,SystemClock.elapsedRealtime()-segmentStart)
+        // Fast path: when the base fill already produced producer, wine
+        // name, vintage, country and region with no RED field, AND the
+        // GLiNER lanes independently agree on producer and wine name,
+        // the evidence/spatial stage (the most expensive step by far)
+        // has little left to add — skip it and keep the base fields.
+        // Anything weaker or disagreeing takes the full stage as before.
+        val formRow=journal.rows.lastOrNull { it["stage"]=="form_summary" }
+        fun fillValue(key:String)=formRow?.get(key).orEmpty()
+        fun fillState(key:String)=formRow?.get(key+"_state").orEmpty()
+        fun laneAgrees(lane:GlinerLane,value:String):Boolean {
+            if(value.isBlank()) return false
+            val group=labelled.lane(lane)
+            if(group.isEmpty) return false
+            val target=GlinerDocument.normalize(value)
+            if(target.isBlank()) return false
+            return group.entities.any { GlinerDocument.normalize(it.text)==target } ||
+                GlinerDocument.normalize(group.text).contains(target)
+        }
+        val skipSpatial=listOf("producer","wine_name","vintage","country","region")
+            .all { fillValue(it).isNotBlank() && fillState(it)!="RED" } &&
+            laneAgrees(GlinerLane.PRODUCER,fillValue("producer")) &&
+            laneAgrees(GlinerLane.WINE_NAME,fillValue("wine_name"))
+        if(skipSpatial) notes += "spatial contender skipped: strong base fill and GLiNER lanes agree"
         segmentStart=SystemClock.elapsedRealtime()
+        if(!skipSpatial) {
         val engine=warm.evidenceExtractor(kb,true,true,modules)
         val hybrid=warm.anchorHybrid(kb)
         val repair=warm.producerRepair(kb)
@@ -365,6 +389,7 @@ internal object GlinerLabRunner {
         catch(error:Exception) {
             notes += "spatial contender error: ${error.javaClass.simpleName}: ${error.message}"
         } finally { if(ownsProducers) producers?.close() }
+        }
         val summary=journal.rows.lastOrNull { it["stage"]=="gliner_evidence_summary" }
             ?: journal.rows.lastOrNull { it["stage"]=="form_summary" }
         val fields=PhoneCorpusMath.fields.associateWith { field ->

@@ -128,6 +128,22 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         kb = (ROOT / 'app/src/main/java/com/yourapp/wine/kb/SqliteWineKnowledgeBase.kt').read_text()
         self.assertIn('PRAGMA cache_size=-8192', kb)
 
+    def test_evidence_fast_path_and_scanner_stage_accounting(self):
+        runner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabRunner.kt').read_text()
+        scanner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerProductionScanner.kt').read_text()
+        add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
+        # Fast path: strong base fill + GLiNER agreement skips the
+        # evidence/spatial stage entirely.
+        self.assertIn('val skipSpatial=listOf("producer","wine_name","vintage","country","region")', runner)
+        self.assertIn('laneAgrees(GlinerLane.PRODUCER,fillValue("producer"))', runner)
+        self.assertIn('if(!skipSpatial) {', runner)
+        self.assertIn('spatial contender skipped: strong base fill and GLiNER lanes agree', runner)
+        # Previously unmeasured scanner time is now staged.
+        self.assertIn('ScanStage.WARM_SESSION,warmPickupMs', scanner)
+        self.assertIn('ScanStage.FIELD_ADAPTER,adapterMs', scanner)
+        self.assertIn('"Reader pickup"', add)
+        self.assertIn('"Field mapping"', add)
+
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
         self.assertIn('val showScanTimer = ScanTimerSettings.isEnabled(context)', add)
