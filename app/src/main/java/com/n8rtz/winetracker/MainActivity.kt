@@ -344,7 +344,12 @@ fun MainAppScaffold(
     // Add button/menu disappears for as long as it is up.
     var wineActionBarVisible by remember { mutableStateOf(false) }
     var menuHistory by remember { mutableStateOf(listOf("cellar")) }
-    fun navigateToMenu(route: String) {
+    // Whether the tab switch currently being navigated to should slide.
+    // Only swipe-initiated switches slide; bottom-bar taps (and every
+    // other caller of navigateToMenu) just fade.
+    var tabSwitchSlides by remember { mutableStateOf(false) }
+    fun navigateToMenu(route: String, slide: Boolean = false) {
+        tabSwitchSlides = slide
         if (menuHistory.lastOrNull() != route) menuHistory = menuHistory + route
         navigateToTab(navController, route)
     }
@@ -362,7 +367,7 @@ fun MainAppScaffold(
     //    text-field drags): if the threshold is crossed slowly, the
     //    gesture is left entirely to the child.
     val currentRouteState = rememberUpdatedState(currentRoute)
-    val navigateToMenuState = rememberUpdatedState { route: String -> navigateToMenu(route) }
+    val navigateToMenuState = rememberUpdatedState { route: String -> navigateToMenu(route, slide = true) }
     val tabSwipeModifier = Modifier.pointerInput(Unit) {
         val thresholdPx = 60.dp.toPx()
         awaitPointerEventScope {
@@ -426,11 +431,13 @@ fun MainAppScaffold(
             if (hasPreviousMenu) {
                 val target = menuHistory[menuHistory.lastIndex - 1]
                 menuHistory = menuHistory.dropLast(1)
+                tabSwitchSlides = false
                 navigateToTab(navController, target)
             }
         } else if (!navController.popBackStack() && hasPreviousMenu) {
             val target = menuHistory[menuHistory.lastIndex - 1]
             menuHistory = menuHistory.dropLast(1)
+            tabSwitchSlides = false
             navigateToTab(navController, target)
         }
     }
@@ -529,6 +536,7 @@ fun MainAppScaffold(
                             // Always land on the Cellar root: this covers the wine editor, an
                             // add/note editor reached from any tab, and every other tab.
                             if (menuHistory.lastOrNull() != "cellar") menuHistory = menuHistory + "cellar"
+                            tabSwitchSlides = false
                             if (!navController.popBackStack("cellar", inclusive = false)) {
                                 navigateToMenu("cellar")
                             }
@@ -587,15 +595,16 @@ fun MainAppScaffold(
             navController = navController,
             startDestination = "cellar",
             modifier = Modifier.padding(padding).fillMaxSize().then(tabSwipeModifier),
-            // Adjacent main tabs slide the full width in the direction
-            // of travel, starting immediately — no fade, no delay — so
-            // the screen responds the moment a swipe or tap registers.
-            // (A fade-first pattern felt like nothing happened, then the
-            // next screen popped in all at once.) Other routes fade.
+            // Swipe-initiated switches between main tabs slide the full
+            // width in the direction of travel, starting immediately —
+            // no fade, no delay — so the screen responds the moment a
+            // swipe registers. (A fade-first pattern felt like nothing
+            // happened, then the next screen popped in all at once.)
+            // Bottom-bar taps and all other routes just fade.
             enterTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
-                if (from >= 0 && to >= 0 && from != to) {
+                if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {
                     slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) full else -full }
                 } else {
                     fadeIn(animationSpec = tween(160))
@@ -604,7 +613,7 @@ fun MainAppScaffold(
             exitTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
-                if (from >= 0 && to >= 0 && from != to) {
+                if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {
                     slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) -full else full }
                 } else {
                     fadeOut(animationSpec = tween(120))
@@ -613,7 +622,7 @@ fun MainAppScaffold(
             popEnterTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
-                if (from >= 0 && to >= 0 && from != to) {
+                if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {
                     slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) full else -full }
                 } else {
                     fadeIn(animationSpec = tween(160))
@@ -622,7 +631,7 @@ fun MainAppScaffold(
             popExitTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
-                if (from >= 0 && to >= 0 && from != to) {
+                if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {
                     slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) -full else full }
                 } else {
                     fadeOut(animationSpec = tween(120))

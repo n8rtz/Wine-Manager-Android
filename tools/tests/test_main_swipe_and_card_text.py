@@ -41,6 +41,13 @@ class MainSwipeTests(unittest.TestCase):
         self.assertIn("FastOutSlowInEasing", source)
         self.assertIn("tween(240, easing = FastOutSlowInEasing)", source)
         self.assertNotIn("delayMillis", source)
+        # ...but only for swipe-initiated switches: bottom-bar taps
+        # must not slide. The swipe is the only caller passing
+        # slide = true; transitions check the gate.
+        self.assertIn("var tabSwitchSlides by remember { mutableStateOf(false) }", source)
+        self.assertIn("fun navigateToMenu(route: String, slide: Boolean = false)", source)
+        self.assertIn("navigateToMenu(route, slide = true)", source)
+        self.assertEqual(source.count("if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {"), 4)
 
 class CardTextTests(unittest.TestCase):
     def test_wine_card_never_truncates_text(self):
