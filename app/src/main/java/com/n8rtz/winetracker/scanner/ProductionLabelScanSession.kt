@@ -65,6 +65,14 @@ internal object ProductionLabelScanSession {
         }
     }
 
+    /**
+     * Starts first-scan warm-up (bundle verify, ONNX session, KB and
+     * gazetteer pre-open) so it overlaps the user framing the photo.
+     * Called when the Add Wine screen opens; capture/import re-trigger it
+     * as a backstop. Idempotent and best-effort.
+     */
+    fun warmUp(context: Context) = com.yourapp.wine.gliner.GlinerScanWarmup.begin(context.applicationContext)
+
     fun requestCapture(context: Context): Boolean = synchronized(lock) {
         val app = context.applicationContext
         initialize(app)
@@ -77,6 +85,7 @@ internal object ProductionLabelScanSession {
             mutable.value = LabelScanState.Error(++nextId, "Could not start the scan — try again or enter details manually")
             return false
         }
+        warmUp(app)
         val id = ++nextId
         Log.d("ProductionLabelScanSession", "requestCapture accepted: id=$id")
         mutable.value = LabelScanState.CapturingPhoto(id, SystemClock.elapsedRealtime())
@@ -126,6 +135,7 @@ internal object ProductionLabelScanSession {
             mutable.value = LabelScanState.Error(++nextId, "Could not start the scan — try again or enter details manually")
             return false
         }
+        warmUp(app)
         val id = ++nextId
         val started = SystemClock.elapsedRealtime()
         mutable.value = LabelScanState.ImportingPhoto(id, started)
@@ -280,7 +290,7 @@ internal object ProductionLabelScanSession {
     fun dismiss(context: Context, id: Long) = synchronized(lock) {
         val app = context.applicationContext
         when (val current = mutable.value) {
-            is LabelScanState.CapturingPhoto -> if (current.requestId == id) { mutable.value = LabelScanState.Idle; LabelScanService.stop(app) }
+            is LabelScanState.CapturingPhoto -> if (current.requestId == id) { mutable.value = LabelScanState.Idle; com.yourapp.wine.gliner.GlinerScanWarmup.discard(); LabelScanService.stop(app) }
             is LabelScanState.ImportingPhoto -> if (current.requestId == id) { mutable.value = LabelScanState.FinishingCancelledScan(id); job?.cancel() }
             is LabelScanState.Processing -> if (current.requestId == id) { mutable.value = LabelScanState.FinishingCancelledScan(id); job?.cancel() }
             is LabelScanState.Review -> if (current.requestId == id) { PendingLabelScanStore(app).clearResult(id); mutable.value = LabelScanState.Idle }

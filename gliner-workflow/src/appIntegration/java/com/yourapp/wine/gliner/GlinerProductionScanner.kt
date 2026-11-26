@@ -60,10 +60,14 @@ internal object GlinerProductionScanner {
             if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext unavailable("model setup exceeded scan budget",started,source)
             onStage(LabelScanProgressStep.LOAD_READER)
             val laneConfig=GlinerLaneConfig()
-            val opened=GlinerOnnxModel.open(context,status,laneConfig)
+            // First-scan warm-up (GlinerScanWarmup) may have pre-opened
+            // the ONNX session and the KB/gazetteer session while the
+            // user was framing the photo; consume those when present so
+            // the post-shutter path starts hot. Single-use either way.
+            val opened=GlinerScanWarmup.takeModel(status) ?: GlinerOnnxModel.open(context,status,laneConfig)
             model=opened
             val readyMs=SystemClock.elapsedRealtime()
-            val session=TextLabWineExtraction.WarmSession(context)
+            val session=GlinerScanWarmup.takeWarmSession() ?: TextLabWineExtraction.WarmSession(context)
             warm=session
             val result=GlinerLabRunner.runProduction(context,photo,opened,session,deadlineAtMs,onStage)
             if(result.status!="complete") return@withContext unavailable("GLiNER workflow: ${result.status} ${oneLine(result.message)}",started,source)

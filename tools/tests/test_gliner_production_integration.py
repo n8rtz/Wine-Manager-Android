@@ -41,6 +41,28 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         self.assertIn('Could not read the label — retake or enter details manually',router)
         self.assertIn('const val BUDGET_MS=90_000L',router)
 
+    def test_first_scan_warmup_preopens_during_framing(self):
+        warmup=self.text(GL/'GlinerScanWarmup.kt')
+        scanner=self.text(GL/'GlinerProductionScanner.kt')
+        session=self.text(APP/'com/n8rtz/winetracker/scanner/ProductionLabelScanSession.kt')
+        vm=self.text(APP/'com/n8rtz/winetracker/viewmodels/ScannerViewModel.kt')
+        # Warm-up pre-opens the cold, per-scan pieces: ONNX session,
+        # knowledge base and expanded producer gazetteer.
+        self.assertIn('GlinerOnnxModel.open(app, status, GlinerLaneConfig())',warmup)
+        self.assertIn('ProducerGazetteer.openExpanded(app)',warmup)
+        self.assertIn('session.knowledgeBase()',warmup)
+        # The scanner consumes the prepared pieces single-use and still
+        # falls back to opening its own when nothing was prepared.
+        self.assertIn('GlinerScanWarmup.takeModel(status) ?: GlinerOnnxModel.open(context,status,laneConfig)',scanner)
+        self.assertIn('GlinerScanWarmup.takeWarmSession() ?: TextLabWineExtraction.WarmSession(context)',scanner)
+        # A pre-opened model is never used against a changed bundle file.
+        self.assertIn('file.lastModified() != prepared.modified',warmup)
+        # Triggered when Add Wine opens and again at capture/import;
+        # released when a capture is dismissed.
+        self.assertIn('ProductionLabelScanSession.warmUp(getApplication())',vm)
+        self.assertGreaterEqual(session.count('warmUp(app)'),2)
+        self.assertIn('GlinerScanWarmup.discard()',session)
+
     def test_normal_review_does_not_add_model_specific_ui(self):
         adapter=self.text(GL/'GlinerProductionAdapter.kt')
         router=self.text(APP/'com/yourapp/wine/capture/ProductionLabelScanner.kt')

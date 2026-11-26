@@ -71,6 +71,10 @@ class ScannerViewModel(application: Application, val repository: WineRepository)
             runCatching { WineScannerServices.get(getApplication()) }
                 .onFailure { Log.w("ScannerViewModel", "Scanner prewarm unavailable", it) }
         }
+        // First-scan warm-up for the production GLiNER pipeline: pre-open
+        // the ONNX session, KB and gazetteer while the user frames the
+        // photo, so the one scan most users run starts hot.
+        com.n8rtz.winetracker.scanner.ProductionLabelScanSession.warmUp(getApplication())
     }
 
     fun clearScannedResult() { _scannedResult.value = null }
