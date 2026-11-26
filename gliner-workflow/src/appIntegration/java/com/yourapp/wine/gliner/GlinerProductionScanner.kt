@@ -77,6 +77,9 @@ internal object GlinerProductionScanner {
             if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext unavailable("scan budget reached",started,source)
             val elapsed=SystemClock.elapsedRealtime()-started
             val tokens=result.rawReadings
+            val adapterStart=SystemClock.elapsedRealtime()
+            val adapted=GlinerProductionAdapter.fill(result.fields,result.fieldStates,result.fieldDecisions)
+            val adapterMs=SystemClock.elapsedRealtime()-adapterStart
             val diagnostics=ScanDiagnostics(source=source,pipeline="gliner",budgetMs=budgetMs,inputBytes=photo.length(),
                 workW=result.workingWidth,workH=result.workingHeight,kbImplementation="Lab v7 expanded + ${GlinerFieldDecisionPolicy.VERSION}",
                 quadSource=if(result.croppedToTextRegion) "text_region_crop" else "full_photo_gliner",lastStage=ScanStage.FILL,
@@ -90,9 +93,6 @@ internal object GlinerProductionScanner {
                     ScanEngineStatus("gliner-small-int4",true,opened.signature),
                 reads=tokens.take(80).map { ScanReadSample(it.textRaw,it.score,it.scoreIsEstimated,it.engineId,it.variantId,"FULL_PHOTO",true) },
                 totalReadings=tokens.size,mappingReceived=tokens.size)
-            val adapterStart=SystemClock.elapsedRealtime()
-            val adapted=GlinerProductionAdapter.fill(result.fields,result.fieldStates,result.fieldDecisions)
-            val adapterMs=SystemClock.elapsedRealtime()-adapterStart
             val fill=adapted.let { base ->
                 // A missing OCR reading is not evidence of agreement. Keep uncertain values
                 // reviewable, without exposing the implementation as a separate scan experience.

@@ -141,6 +141,8 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         # Previously unmeasured scanner time is now staged.
         self.assertIn('ScanStage.WARM_SESSION,warmPickupMs', scanner)
         self.assertIn('ScanStage.FIELD_ADAPTER,adapterMs', scanner)
+        # adapterMs must be computed before the diagnostics that use it.
+        self.assertLess(scanner.index('val adapterMs='), scanner.index('val diagnostics='))
         self.assertIn('"Reader pickup"', add)
         self.assertIn('"Field mapping"', add)
 
