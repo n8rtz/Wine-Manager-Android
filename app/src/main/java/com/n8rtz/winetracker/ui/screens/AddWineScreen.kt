@@ -50,6 +50,7 @@ import com.n8rtz.winetracker.data.local.HsvColor
 import com.n8rtz.winetracker.data.local.matchesWineSearch
 import com.n8rtz.winetracker.ui.components.DefaultColorField
 import com.n8rtz.winetracker.scanner.LabelScanState
+import com.n8rtz.winetracker.scanner.ScanTimerSettings
 import com.n8rtz.winetracker.scanner.AddWineDraft
 import com.n8rtz.winetracker.scanner.AddWineDraftStore
 import com.n8rtz.winetracker.scanner.isBusy
@@ -82,6 +83,8 @@ fun AddWineScreen(
     val context = LocalContext.current
     val formScrollState = rememberScrollState()
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
+    // Developer option (Settings): time the whole label recognition.
+    val showScanTimer = ScanTimerSettings.isEnabled(context)
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
     var cameraPermissionGranted by remember {
         mutableStateOf(
@@ -325,7 +328,7 @@ fun AddWineScreen(
         sheetPeekHeight = drawerPeekHeight,
         sheetDragHandle = { DrawerHandleCard() },
         sheetContent = {
-            if (showDrawerProgress) DrawerScanProgress(labelScanState)
+            if (showDrawerProgress) DrawerScanProgress(labelScanState, showScanTimer)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -341,6 +344,14 @@ fun AddWineScreen(
                         modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
+                    )
+                }
+                if (showScanTimer) lastScanReport?.let { report ->
+                    Text(
+                        "Recognition took ${ScanTimerSettings.formatDuration(report.elapsedMs)}",
+                        modifier = Modifier.fillMaxWidth(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
@@ -832,16 +843,42 @@ private fun DrawerHandleCard() {
 
 /** Loading bar plus one-line status, sized to fit the progress peek exactly. */
 @Composable
-private fun DrawerScanProgress(scanState: LabelScanState) {
+private fun DrawerScanProgress(scanState: LabelScanState, showTimer: Boolean = false) {
     val message = scanState.scanStepLabel ?: return
     val progress = scanState.scanProgressFraction
     val animated by animateFloatAsState(targetValue = progress ?: 0f, label = "labelScanProgress")
+    // Developer-option timer: whole recognition, from shutter/import to
+    // the finished result. Ticks live here; the final total is the
+    // report's own elapsedMs, shown next to the form.
+    val startedMs = when (scanState) {
+        is LabelScanState.CapturingPhoto -> scanState.shutterMs
+        is LabelScanState.ImportingPhoto -> scanState.startedMs
+        is LabelScanState.Processing -> scanState.shutterMs
+        else -> null
+    }
+    var nowMs by remember(startedMs) { mutableStateOf(android.os.SystemClock.elapsedRealtime()) }
+    LaunchedEffect(showTimer, startedMs) {
+        if (showTimer && startedMs != null) {
+            while (true) {
+                nowMs = android.os.SystemClock.elapsedRealtime()
+                delay(100)
+            }
+        }
+    }
     Column(modifier = Modifier.fillMaxWidth().height(DRAWER_PROGRESS_HEIGHT).padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.Center) {
         if (progress == null) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         else LinearProgressIndicator(progress = { animated }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
-        Text(message, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(message, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f))
+            if (showTimer && startedMs != null) {
+                Text(ScanTimerSettings.formatDuration(nowMs - startedMs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
 

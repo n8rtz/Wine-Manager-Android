@@ -73,6 +73,7 @@ fun ProfileScreen(
     var showDefaultSortSettings by remember { mutableStateOf(false) }
     val cellarCountShowsBottles by viewModel.cellarCountShowsBottles.collectAsState()
     var showCountDisplaySettings by remember { mutableStateOf(false) }
+    var showScanTimer by remember { mutableStateOf(com.n8rtz.winetracker.scanner.ScanTimerSettings.isEnabled(context)) }
     var reviewerDraft by remember { mutableStateOf(emptyList<String>()) }
     var newReviewer by remember { mutableStateOf("") }
 
@@ -394,6 +395,29 @@ fun ProfileScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     }
+
+                    Text(
+                        text = "Developer options",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = bordeauxRed,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    ListItem(
+                        headlineContent = { Text("Show scan recognition timer") },
+                        supportingContent = {
+                            Text("Time label recognition in the Add Wine scanner (live while scanning, total when done)")
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = showScanTimer,
+                                onCheckedChange = { enabled ->
+                                    showScanTimer = enabled
+                                    com.n8rtz.winetracker.scanner.ScanTimerSettings.setEnabled(context, enabled)
+                                }
+                            )
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     Text(
                         text = "About",
