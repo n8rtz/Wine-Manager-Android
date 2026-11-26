@@ -114,8 +114,14 @@ internal object ProductionLabelScanSession {
                     LabelScanService.stop(app)
                     null
                 } else {
-                    mutable.value = LabelScanState.Processing(id, file.absolutePath, current.shutterMs)
-                    current.shutterMs
+                    // Recognition timing starts at photo confirmation,
+                    // not at the shutter: the seconds the user spends
+                    // inspecting the captured still are not recognition.
+                    // This stamp drives the scan budget, the report's
+                    // elapsedMs and the developer timer alike.
+                    val confirmedMs = SystemClock.elapsedRealtime()
+                    mutable.value = LabelScanState.Processing(id, file.absolutePath, confirmedMs)
+                    confirmedMs
                 }
             } else null
         }

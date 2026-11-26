@@ -40,6 +40,15 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertIn('clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(shareText))', add)
         self.assertIn('Text("Copy to clipboard")', add)
 
+    def test_timer_starts_at_photo_confirmation_not_shutter(self):
+        session = (APP / 'scanner/ProductionLabelScanSession.kt').read_text()
+        # captured() runs at the confirm tap; it must stamp the confirm
+        # time as the recognition start, not forward the shutter time.
+        self.assertIn('val confirmedMs = SystemClock.elapsedRealtime()', session)
+        self.assertIn('LabelScanState.Processing(id, file.absolutePath, confirmedMs)', session)
+        self.assertIn('launchPhotoScan(app, id, started, ScanInputSource.CAMERA, file)', session)
+        self.assertNotIn('LabelScanState.Processing(id, file.absolutePath, current.shutterMs)', session)
+
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
         self.assertIn('val showScanTimer = ScanTimerSettings.isEnabled(context)', add)
