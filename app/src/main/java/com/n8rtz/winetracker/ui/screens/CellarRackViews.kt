@@ -429,23 +429,34 @@ internal fun CellarRacks(
                                             tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                                     }
                                 }
-                                // Counts split by a centred vertical rule:
-                                // distinct wines on the left, total bottles
-                                // on the right.
+                                // Counts as two stacked pairs split by a
+                                // vertical rule: number over its word
+                                // (centred), wines on the left, total
+                                // bottles on the right. Equal spacers
+                                // either side put the rule equidistant
+                                // from the two text blocks (not necessarily
+                                // at the tile's centre).
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("${rackItems.size} ${if (rackItems.size == 1) "wine" else "wines"}",
-                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.weight(1f))
-                                    Box(Modifier.width(1.dp).height(14.dp)
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("${rackItems.size}",
+                                            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                        Text(if (rackItems.size == 1) "wine" else "wines",
+                                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                    Spacer(Modifier.weight(1f))
+                                    Box(Modifier.width(1.dp).height(26.dp)
                                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
+                                    Spacer(Modifier.weight(1f))
                                     val bottleCount = rackItems.sumOf { it.bottle.quantity }
-                                    Text("$bottleCount ${if (bottleCount == 1) "bottle" else "bottles"}",
-                                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                                        modifier = Modifier.weight(1f))
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text("$bottleCount",
+                                            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                        Text(if (bottleCount == 1) "bottle" else "bottles",
+                                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
                                 }
                             }
                         }
