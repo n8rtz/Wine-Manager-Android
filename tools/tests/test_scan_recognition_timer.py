@@ -77,6 +77,18 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertIn('timing.stage == com.yourapp.wine.diagnostics.ScanStage.FILL', add)
         self.assertIn('"  $label: ${ScanTimerSettings.formatDurationWithMs(ms)}"', add)
 
+    def test_kb_producer_lookups_are_memoized(self):
+        kb = (ROOT / 'app/src/main/java/com/yourapp/wine/kb/SqliteWineKnowledgeBase.kt').read_text()
+        # Repeated identical FTS+alias+Levenshtein lookups across the
+        # fill/evidence stages must be served from cache; results are
+        # immutable per KB instance, and imports clear the caches.
+        self.assertIn('private val producerHitCache = HashMap<String, List<ProducerHit>>()', kb)
+        self.assertIn('producerHitCache["p:$text"]?.let { return@access it }', kb)
+        self.assertIn('producerHitCache["f:$text"]?.let { return@access it }', kb)
+        self.assertIn('aliasCache[id]?.let { return it }', kb)
+        self.assertGreaterEqual(kb.count('producerHitCache.clear()'), 2)
+        self.assertIn('aliasCache.clear()', kb)
+
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
         self.assertIn('val showScanTimer = ScanTimerSettings.isEnabled(context)', add)
