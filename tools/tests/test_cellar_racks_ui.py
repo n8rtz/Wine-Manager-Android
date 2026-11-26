@@ -14,6 +14,8 @@ class CellarRacksUiTests(unittest.TestCase):
         # rule sits equidistant from the two blocks via equal spacers,
         # so it need not be at the tile's exact centre.
         self.assertIn('Text("${rackItems.size}",', views)
+        # Numbers match the words: same bodySmall size, same muted grey.
+        self.assertNotIn("typography.bodyMedium, fontWeight = FontWeight.SemiBold", views)
         self.assertIn('Text(if (rackItems.size == 1) "wine" else "wines",', views)
         self.assertIn("val bottleCount = rackItems.sumOf { it.bottle.quantity }", views)
         self.assertIn('Text(if (bottleCount == 1) "bottle" else "bottles",', views)

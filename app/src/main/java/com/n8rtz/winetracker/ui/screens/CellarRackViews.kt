@@ -442,7 +442,7 @@ internal fun CellarRacks(
                                 ) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text("${rackItems.size}",
-                                            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(if (rackItems.size == 1) "wine" else "wines",
                                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
@@ -453,7 +453,7 @@ internal fun CellarRacks(
                                     val bottleCount = rackItems.sumOf { it.bottle.quantity }
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text("$bottleCount",
-                                            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Text(if (bottleCount == 1) "bottle" else "bottles",
                                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
