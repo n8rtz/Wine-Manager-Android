@@ -422,8 +422,13 @@ internal fun CellarRacks(
                             }
                             Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
+                                    // The name spans the tile width; short
+                                    // names that don't fill it are centred,
+                                    // long ones still ellipsize.
                                     Text(rack, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        modifier = Modifier.weight(1f))
                                     if (rackDeletionMode && selectedForDeletion) {
                                         Icon(Icons.Default.CheckCircle, contentDescription = "Selected for rack management",
                                             tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))

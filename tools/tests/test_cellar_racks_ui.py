@@ -13,6 +13,8 @@ class CellarRacksUiTests(unittest.TestCase):
         # ("wines" left block, "bottles" right block), and the vertical
         # rule sits equidistant from the two blocks via equal spacers,
         # so it need not be at the tile's exact centre.
+        # Rack names that don't fill the tile are centred in it.
+        self.assertIn("textAlign = androidx.compose.ui.text.style.TextAlign.Center,", views)
         self.assertIn('Text("${rackItems.size}",', views)
         # Numbers match the words: same bodySmall size, same muted grey.
         self.assertNotIn("typography.bodyMedium, fontWeight = FontWeight.SemiBold", views)
