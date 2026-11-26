@@ -587,51 +587,45 @@ fun MainAppScaffold(
             navController = navController,
             startDestination = "cellar",
             modifier = Modifier.padding(padding).fillMaxSize().then(tabSwipeModifier),
-            // Adjacent main tabs use a shared-axis transition: the
-            // outgoing screen fades out quickly while the incoming one
-            // fades in with a short (1/3 width) slide in the direction
-            // of travel. A full-width slide kept both heavy screens
-            // (e.g. Cellar and Notes) fully rendering for the whole
-            // animation and looked laggy; this reads as the same move
-            // with a fraction of the overdraw. Other routes just fade.
+            // Adjacent main tabs slide the full width in the direction
+            // of travel, starting immediately — no fade, no delay — so
+            // the screen responds the moment a swipe or tap registers.
+            // (A fade-first pattern felt like nothing happened, then the
+            // next screen popped in all at once.) Other routes fade.
             enterTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0 && from != to) {
-                    slideInHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { full -> (if (to > from) full else -full) / 3 } +
-                        fadeIn(animationSpec = tween(200, delayMillis = 70))
+                    slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) full else -full }
                 } else {
-                    fadeIn(animationSpec = tween(200))
+                    fadeIn(animationSpec = tween(160))
                 }
             },
             exitTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0 && from != to) {
-                    slideOutHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { full -> (if (to > from) -full else full) / 3 } +
-                        fadeOut(animationSpec = tween(90))
+                    slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) -full else full }
                 } else {
-                    fadeOut(animationSpec = tween(90))
+                    fadeOut(animationSpec = tween(120))
                 }
             },
             popEnterTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0 && from != to) {
-                    slideInHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { full -> (if (to > from) full else -full) / 3 } +
-                        fadeIn(animationSpec = tween(200, delayMillis = 70))
+                    slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) full else -full }
                 } else {
-                    fadeIn(animationSpec = tween(200))
+                    fadeIn(animationSpec = tween(160))
                 }
             },
             popExitTransition = {
                 val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
                 val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
                 if (from >= 0 && to >= 0 && from != to) {
-                    slideOutHorizontally(animationSpec = tween(260, easing = FastOutSlowInEasing)) { full -> (if (to > from) -full else full) / 3 } +
-                        fadeOut(animationSpec = tween(90))
+                    slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) -full else full }
                 } else {
-                    fadeOut(animationSpec = tween(90))
+                    fadeOut(animationSpec = tween(120))
                 }
             }
         ) {
