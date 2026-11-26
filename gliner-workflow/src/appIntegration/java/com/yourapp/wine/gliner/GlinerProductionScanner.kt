@@ -78,6 +78,7 @@ internal object GlinerProductionScanner {
             val diagnostics=ScanDiagnostics(source=source,pipeline="gliner",budgetMs=budgetMs,inputBytes=photo.length(),
                 workW=result.workingWidth,workH=result.workingHeight,kbImplementation="Lab v7 expanded + ${GlinerFieldDecisionPolicy.VERSION}",
                 quadSource=if(result.croppedToTextRegion) "text_region_crop" else "full_photo_gliner",lastStage=ScanStage.FILL,
+                detailStages=result.detailStages,
                 stages=listOf(ScanStageTiming(ScanStage.INITIALIZE,(readyMs-started).coerceAtLeast(0)),
                     ScanStageTiming(ScanStage.OCR,result.ocrMs),ScanStageTiming(ScanStage.GLINER,result.glinerMs),
                     ScanStageTiming(ScanStage.FILL,result.postMs)),

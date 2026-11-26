@@ -64,6 +64,19 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         # ...but the reported total is still measured from confirmation.
         self.assertIn('elapsedMs = (SystemClock.elapsedRealtime() - started).coerceAtLeast(0)) else scanned', session)
 
+    def test_fill_detail_stages_are_measured_and_shown(self):
+        runner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabRunner.kt').read_text()
+        diagnostics = (ROOT / 'app/src/main/java/com/yourapp/wine/diagnostics/ScanDiagnostics.kt').read_text()
+        add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
+        self.assertIn('val detailStages: List<ScanStageTiming> = emptyList()', diagnostics)
+        for stage in ('KB_OPEN', 'GAZETTEER_OPEN', 'BASE_FILL', 'EVIDENCE', 'FIELD_DECISIONS'):
+            self.assertIn(stage, runner)
+            self.assertIn(stage, add)
+        self.assertIn('detailStages=result.detailStages', (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerProductionScanner.kt').read_text())
+        # Popup indents the breakdown under Filling in details, copy text too.
+        self.assertIn('timing.stage == com.yourapp.wine.diagnostics.ScanStage.FILL', add)
+        self.assertIn('"  $label: ${ScanTimerSettings.formatDurationWithMs(ms)}"', add)
+
     def test_add_wine_shows_live_and_final_timer(self):
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
         self.assertIn('val showScanTimer = ScanTimerSettings.isEnabled(context)', add)

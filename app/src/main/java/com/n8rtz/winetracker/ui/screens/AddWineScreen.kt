@@ -362,10 +362,18 @@ fun AddWineScreen(
                     val stageLines = report.diagnostics.stages.map { timing ->
                         scanStageLabel(timing.stage) to timing.ms
                     }
+                    val detailLines = report.diagnostics.detailStages.map { timing ->
+                        scanStageLabel(timing.stage) to timing.ms
+                    }
                     val shareText = buildString {
                         appendLine("Label recognition time")
-                        stageLines.forEach { (label, ms) ->
-                            appendLine("$label: ${ScanTimerSettings.formatDurationWithMs(ms)}")
+                        report.diagnostics.stages.forEach { timing ->
+                            appendLine("${scanStageLabel(timing.stage)}: ${ScanTimerSettings.formatDurationWithMs(timing.ms)}")
+                            if (timing.stage == com.yourapp.wine.diagnostics.ScanStage.FILL) {
+                                detailLines.forEach { (label, ms) ->
+                                    appendLine("  $label: ${ScanTimerSettings.formatDurationWithMs(ms)}")
+                                }
+                            }
                         }
                         if (stageLines.isNotEmpty()) appendLine("—")
                         appendLine("Total: ${ScanTimerSettings.formatDurationWithMs(report.elapsedMs)}")
@@ -375,12 +383,24 @@ fun AddWineScreen(
                         title = { Text("Recognition time") },
                         text = {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                stageLines.forEach { (label, ms) ->
+                                report.diagnostics.stages.forEach { timing ->
                                     Row(Modifier.fillMaxWidth()) {
-                                        Text(label, style = MaterialTheme.typography.bodyMedium,
+                                        Text(scanStageLabel(timing.stage), style = MaterialTheme.typography.bodyMedium,
                                             modifier = Modifier.weight(1f))
-                                        Text(ScanTimerSettings.formatDurationWithMs(ms),
+                                        Text(ScanTimerSettings.formatDurationWithMs(timing.ms),
                                             style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                    if (timing.stage == com.yourapp.wine.diagnostics.ScanStage.FILL) {
+                                        detailLines.forEach { (label, ms) ->
+                                            Row(Modifier.fillMaxWidth().padding(start = 16.dp)) {
+                                                Text(label, style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.weight(1f))
+                                                Text(ScanTimerSettings.formatDurationWithMs(ms),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
                                     }
                                 }
                                 if (stageLines.isNotEmpty()) HorizontalDivider(Modifier.padding(vertical = 4.dp))
@@ -1130,4 +1150,9 @@ private fun scanStageLabel(stage: com.yourapp.wine.diagnostics.ScanStage): Strin
     com.yourapp.wine.diagnostics.ScanStage.OCR -> "Text reading (OCR)"
     com.yourapp.wine.diagnostics.ScanStage.GLINER -> "Label understanding (GLiNER)"
     com.yourapp.wine.diagnostics.ScanStage.FILL -> "Filling in details"
+    com.yourapp.wine.diagnostics.ScanStage.KB_OPEN -> "Knowledge base load"
+    com.yourapp.wine.diagnostics.ScanStage.GAZETTEER_OPEN -> "Producer gazetteer load"
+    com.yourapp.wine.diagnostics.ScanStage.BASE_FILL -> "Base field fill"
+    com.yourapp.wine.diagnostics.ScanStage.EVIDENCE -> "Evidence & spatial analysis"
+    com.yourapp.wine.diagnostics.ScanStage.FIELD_DECISIONS -> "GLiNER field decisions"
 }

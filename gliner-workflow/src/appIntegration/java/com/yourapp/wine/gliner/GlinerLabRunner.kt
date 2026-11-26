@@ -5,6 +5,7 @@ import android.os.SystemClock
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.scanner.LabelScanProgressStep
 import com.yourapp.wine.diagnostics.ScanStage
+import com.yourapp.wine.diagnostics.ScanStageTiming
 import com.yourapp.wine.gazetteer.ProducerGazetteer
 import com.yourapp.wine.gazetteer.ProducerResolver
 import com.yourapp.wine.kb.BundledGrapes
@@ -78,6 +79,8 @@ internal data class GlinerLabImageResult(
     val engineReadings:Map<String,Int> = emptyMap(),
     /** True when OCR read a crop around the detected text rather than the full photo. */
     val croppedToTextRegion:Boolean = false,
+    /** Sub-stage timings inside FILL (KB/gazetteer loads, base fill, evidence, decisions). */
+    val detailStages:List<ScanStageTiming> = emptyList(),
 ) {
     val complete:Boolean get() = status=="complete" && eligible && errorCount==0
 }
@@ -186,10 +189,13 @@ internal object GlinerLabRunner {
                 GlinerEvidenceLine(reading.engineId,reading.text,reading.box.left,reading.box.top,
                     reading.box.right,reading.box.bottom)
             }
+            val decisionStart=SystemClock.elapsedRealtime()
             val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.applyWithEvidence(
                 post.fields,laneHints,decisionReadings,grapeTerms,styleTerms,knownPlaceKeys,GlinerGeography.origins,
                 GlinerCatalogIndexes.italianAppellations,GlinerCatalogIndexes.usAvas,
                 GlinerCatalogIndexes.frenchAppellations) else GlinerFieldDecision(post.fields,emptyList())
+            val detailStages=post.detailStages+ScanStageTiming(ScanStage.FIELD_DECISIONS,
+                SystemClock.elapsedRealtime()-decisionStart)
             val fields=decision.fields
             val fieldStates=post.states.toMutableMap().apply {
                 PhoneCorpusMath.fields.filter { fields[it].orEmpty()!=post.fields[it].orEmpty() }
@@ -241,6 +247,7 @@ internal object GlinerLabRunner {
                 originalWidth=ocr.originalWidth,originalHeight=ocr.originalHeight,
                 workingWidth=ocr.workingWidth,workingHeight=ocr.workingHeight,
                 peakWorkingBitmaps=ocr.peakWorkingBitmaps,engineReadings=ocr.engineReadings,croppedToTextRegion=ocr.croppedToTextRegion,
+                detailStages=detailStages,
                 notes=buildString {
                     appendLine(ocr.description)
                     appendLine("readings: "+ocr.engineReadings.entries.joinToString(" · ") { "${it.key} ${it.value} lines" })
@@ -268,6 +275,7 @@ internal object GlinerLabRunner {
         val status:String,
         val message:String,
         val notes:List<String>,
+        val detailStages:List<ScanStageTiming> = emptyList(),
     )
 
     /**
@@ -296,12 +304,23 @@ internal object GlinerLabRunner {
             "lab_modules" to modules.signatureKey(),
         ))
         val notes=mutableListOf<String>()
+        // Sub-stage timings inside FILL, surfaced in the scan diagnostics
+        // (developer recognition-time popup) so a slow fill can be blamed
+        // on data loads vs. computation.
+        val detailStages=mutableListOf<ScanStageTiming>()
+        var segmentStart=SystemClock.elapsedRealtime()
         val kb=warm.knowledgeBase()
+        detailStages += ScanStageTiming(ScanStage.KB_OPEN,SystemClock.elapsedRealtime()-segmentStart)
+        segmentStart=SystemClock.elapsedRealtime()
         val fill=warm.fillEngine(kb)
         TextLabFormPreview.append(journal,fill,year,recordsOverride=records)
+        detailStages += ScanStageTiming(ScanStage.BASE_FILL,SystemClock.elapsedRealtime()-segmentStart)
+        segmentStart=SystemClock.elapsedRealtime()
         val engine=warm.evidenceExtractor(kb,true,true,modules)
         val hybrid=warm.anchorHybrid(kb)
         val repair=warm.producerRepair(kb)
+        var evidenceMs=SystemClock.elapsedRealtime()-segmentStart
+        segmentStart=SystemClock.elapsedRealtime()
         var producers=warm.cachedGazetteer(true)?.gazetteer
         var ownsProducers=producers==null
         var unavailable="Lab expanded producer index required"
@@ -316,6 +335,8 @@ internal object GlinerLabRunner {
                 notes += unavailable
             }
         }
+        detailStages += ScanStageTiming(ScanStage.GAZETTEER_OPEN,SystemClock.elapsedRealtime()-segmentStart)
+        segmentStart=SystemClock.elapsedRealtime()
         try {
             var lookupDeadline=0L
             val lookupBudget={
@@ -338,10 +359,12 @@ internal object GlinerLabRunner {
         val failed=summary==null || summary["status"]=="failed"
         if(summary==null) notes += "No post-processing summary row was produced"
         if(summary!=null && summary["status"]=="failed") notes += "post-processing detail: ${summary["details"].orEmpty()}"
+        evidenceMs += SystemClock.elapsedRealtime()-segmentStart
+        detailStages += ScanStageTiming(ScanStage.EVIDENCE,evidenceMs)
         val valuesFound=PhoneCorpusMath.fields.count { fields[it].orEmpty().isNotBlank() }
         return PostOutcome(fields,states,if(failed) "failed" else "complete",
             if(failed) "Post-processing failed" else "$valuesFound/6 fields suggested before GLiNER field decisions",
-            notes)
+            notes,detailStages)
     }
 
     /** Failure row for an unexpected exception outside the stage handlers, so the table stays complete. */

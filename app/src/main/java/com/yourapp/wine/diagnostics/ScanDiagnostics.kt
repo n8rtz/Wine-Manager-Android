@@ -3,7 +3,9 @@ package com.yourapp.wine.diagnostics
 /** No coordinates: the input is local in every case; selecting a photo never uploads it. */
 enum class ScanInputSource { CAMERA, PHOTO_LIBRARY, FILE }
 
-enum class ScanStage { CAPTURE, IMPORT, INITIALIZE, WAIT_FOR_SLOT, NATIVE_LOAD, DECODE, QUALITY, LOCALIZE, WARP, OCR, GLINER, FILL }
+enum class ScanStage { CAPTURE, IMPORT, INITIALIZE, WAIT_FOR_SLOT, NATIVE_LOAD, DECODE, QUALITY, LOCALIZE, WARP, OCR, GLINER, FILL,
+    // Sub-stages of FILL, reported separately in detailStages (never as top-level stages).
+    KB_OPEN, GAZETTEER_OPEN, BASE_FILL, EVIDENCE, FIELD_DECISIONS }
 
 data class ScanStageTiming(val stage: ScanStage, val ms: Long)
 data class ScanFailure(val stage: ScanStage, val type: String)
@@ -38,6 +40,8 @@ data class ScanDiagnostics(
     val mappingReceived: Int = 0,
     val mappingRejected: Int = 0,
     val recoveredProbeReadings: Int = 0,
+    /** Timings inside FILL (knowledge-base/gazetteer loads, base fill, evidence, decisions). */
+    val detailStages: List<ScanStageTiming> = emptyList(),
 )
 
 /** No unique device identifiers, account data, location, installed-app inventory, or filesystem paths. */
