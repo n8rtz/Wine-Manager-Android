@@ -1003,7 +1003,11 @@ private fun AddWineCameraLayer(
             frozenPath != null -> AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(File(frozenPath))
-                    .crossfade(true)
+                    // Display-only decode: the recognition pipeline
+                    // reads the file itself, so bounding the bitmap to
+                    // screen size and skipping the crossfade only makes
+                    // the confirm still appear sooner after the shutter.
+                    .size(1600)
                     .memoryCachePolicy(CachePolicy.ENABLED)
                     .diskCachePolicy(CachePolicy.DISABLED)
                     .build(),

@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
@@ -44,6 +45,9 @@ internal object ProductionLabelScanSession {
      * budget still start at confirmation — this only hides the work
      * behind the user's decision time.
      */
+    /** Delay before the speculative scan starts, so the confirm still renders first. */
+    private const val SPECULATIVE_START_DELAY_MS = 500L
+
     private class SpeculativeScan(val requestId: Long, val file: File, val result: Deferred<ScanReport>)
     private var speculativeScan: SpeculativeScan? = null
     // Allows deterministic lifecycle tests without invoking native OCR. Never set by the app.
@@ -129,6 +133,13 @@ internal object ProductionLabelScanSession {
                 speculativeScan == null && file.isFile) {
                 Log.d("ProductionLabelScanSession", "photoTaken: starting speculative scan $id")
                 speculativeScan = SpeculativeScan(id, file, scope.async {
+                    // Give the confirm still a head start: it has to
+                    // unmount the camera and decode the JPEG in the
+                    // same moment, and a scan saturating every core
+                    // made the still visibly lag behind the shutter.
+                    // Half a second of delay is invisible behind the
+                    // confirm screen (users take far longer to decide).
+                    delay(SPECULATIVE_START_DELAY_MS)
                     ProductionLabelScanner.scan(app, file, SystemClock.elapsedRealtime(), ScanInputSource.CAMERA) { reported ->
                         // Ignored while the user is still confirming
                         // (state is CapturingPhoto); once confirm adopts
