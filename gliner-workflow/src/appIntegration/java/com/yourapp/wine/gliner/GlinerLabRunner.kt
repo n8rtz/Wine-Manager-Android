@@ -394,8 +394,15 @@ internal object GlinerLabRunner {
             notes += "spatial contender error: ${error.javaClass.simpleName}: ${error.message}"
         } finally { if(ownsProducers) producers?.close() }
         }
-        val summary=journal.rows.lastOrNull { it["stage"]=="gliner_evidence_summary" }
-            ?: journal.rows.lastOrNull { it["stage"]=="form_summary" }
+        // A failed evidence summary (e.g. the production evidence
+        // budget cap firing mid-extraction) must degrade to the base
+        // fill, never fail the whole scan: the base form summary is
+        // the fallback field source.
+        val spatialSummary=journal.rows.lastOrNull { it["stage"]=="gliner_evidence_summary" }
+        val summary=if(spatialSummary!=null && spatialSummary["status"]!="failed") spatialSummary
+            else journal.rows.lastOrNull { it["stage"]=="form_summary" }
+        if(spatialSummary!=null && spatialSummary["status"]=="failed" && summary!=null)
+            notes += "evidence/spatial stage failed or exceeded its budget; base field fill used"
         val fields=PhoneCorpusMath.fields.associateWith { field ->
             if(summary?.get("${field}_state")=="RED") "" else summary?.get(field).orEmpty()
         }

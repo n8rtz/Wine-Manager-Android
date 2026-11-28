@@ -160,6 +160,10 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         # (no deadline) keep the extractor default.
         self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=2_500L', runner)
         self.assertIn('ScanStage.EVIDENCE_EXTRACT,extractMs', runner)
+        # A failed evidence summary (budget cap) must fall back to the
+        # base fill summary, never fail the scan.
+        self.assertIn('spatialSummary["status"]!="failed") spatialSummary', runner)
+        self.assertIn('evidence/spatial stage failed or exceeded its budget; base field fill used', runner)
         self.assertIn('values["evidence_extract_ms"]=result.elapsedMs.toString()',
             (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text())
         self.assertIn('if(deadlineAtMs==Long.MAX_VALUE) com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS else PRODUCTION_EVIDENCE_BUDGET_MS', runner)
