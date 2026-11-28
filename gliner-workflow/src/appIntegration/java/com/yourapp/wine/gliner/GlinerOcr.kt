@@ -2,6 +2,7 @@ package com.yourapp.wine.gliner
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.PointF
 import android.graphics.RectF
 import android.os.SystemClock
 import com.yourapp.wine.capture.BitmapWorkspace
@@ -53,7 +54,7 @@ internal object GlinerOcr {
         val workingWidth:Int,
         val workingHeight:Int,
         val peakWorkingBitmaps:Int,
-        /** Legacy diagnostics flag: both engines always read the full photo now. */
+        /** True when both engines read a conservative crop around the detected text instead of the full photo. */
         val croppedToTextRegion:Boolean=false,
     )
 
@@ -81,18 +82,36 @@ internal object GlinerOcr {
                     val bitmap=decoded.bitmap
                     val deadline=ScanDeadline(deadlineAtMs)
                     onStage(LabelScanProgressStep.READ_TEXT)
-                    // Both engines read the full photo. The Paddle detector
-                    // (which runs anyway) supplies the line regions for the
-                    // recognizer, while ML Kit reads the whole frame so
-                    // lines the detector missed still reach the fusion. A
-                    // text-region crop used to sit here; the lab A/B showed
-                    // it amputated exactly those ML-Kit-only lines and
-                    // jittered the remaining readings, costing fields.
+                    // Crop before OCR only when a conservative crop is
+                    // clearly safe (see textRegionCrop): the detector
+                    // (which runs anyway) localizes the text, the crop
+                    // keeps half a text-union of slack on every side —
+                    // a line the detector missed but ML Kit can read is
+                    // usually a neighbour of detected lines, so it stays
+                    // inside — and cropping only happens when even the
+                    // slackened crop excludes at least a fifth of the
+                    // frame. Anything closer to the full photo reads the
+                    // full photo, with readings identical to no crop.
+                    // (A tight 10%-margin crop used to sit here; the lab
+                    // A/B showed it amputating ML-Kit-only lines.)
                     val detection=detectRegions(context,bitmap,workspace,spec)
-                    val regions=detection.regions.lines
+                    val crop=textRegionCrop(detection,bitmap.width,bitmap.height)
+                    val photoWidth=bitmap.width
+                    val photoHeight=bitmap.height
+                    val ocrBitmap=if(crop!=null) workspace.own(Bitmap.createBitmap(bitmap,crop[0],crop[1],crop[2],crop[3])) else bitmap
+                    // The crop holds every pixel either engine still
+                    // needs, so release the full-size bitmap:
+                    // BitmapWorkspace allows at most two owned bitmaps
+                    // and the line recognizer's warp (workspace.create)
+                    // needs the second slot. (Leaving it owned once
+                    // silently zeroed PP-OCRv6 on cropped photos.)
+                    if(crop!=null) workspace.release(bitmap)
+                    val regions=detection.regions.lines.map { region ->
+                        if(crop==null) region else region.copy(quadBase=region.quadBase.map { point -> PointF(point.x-crop[0],point.y-crop[1]) })
+                    }
                     val (mlKitReadings,paddleResult)=coroutineScope {
-                        val mlkit=async(Dispatchers.Default) { readMlKit(bitmap,deadline) }
-                        val paddle=async(Dispatchers.Default) { readPaddle(context,bitmap,workspace,spec,deadlineAtMs,regions) }
+                        val mlkit=async(Dispatchers.Default) { readMlKit(ocrBitmap,deadline) }
+                        val paddle=async(Dispatchers.Default) { readPaddle(context,ocrBitmap,workspace,spec,deadlineAtMs,regions) }
                         val first=mlkit.await()
                         // The reads run together; only report the checking phase when the second
                         // read is still running, so a fast pair never flashes a stale step.
@@ -106,10 +125,10 @@ internal object GlinerOcr {
                     val elapsed=SystemClock.elapsedRealtime()-started
                     Outcome(fused,mlKitReadings+paddleReadings,elapsed,"${spec.detector.name} + ${spec.recognizer.name} = ${paddleReadings.size} lines; "+
                         "ML Kit Latin = ${mlKitReadings.size} lines; fused = ${fused.size} lines; "+
-                        "full frame"+
+                        (if(crop!=null) "crop ${crop[2]}x${crop[3]} @ ${crop[0]},${crop[1]} of ${photoWidth}x$photoHeight" else "full frame")+
                         (paddleError?.let { " · paddle: $it" } ?: "")+
                         (if(elapsed>deadlineAtMs-started) " · budget reached" else ""),engineReadings,
-                        decoded.origW,decoded.origH,bitmap.width,bitmap.height,workspace.peakCount,false)
+                        decoded.origW,decoded.origH,ocrBitmap.width,ocrBitmap.height,workspace.peakCount,crop!=null)
                 }
             }
         }
@@ -141,6 +160,35 @@ internal object GlinerOcr {
         // flows release after their own use; a closed session simply
         // reopens on the next detect.
         return PaddleTextDetector.detect(context,bitmap,workspace,WineScannerServices.nativeGate,spec)
+    }
+
+    /**
+     * Conservative crop around the union of detected text regions: the
+     * union grows by half its own width/height on every side (clamped to
+     * the photo), so lines the detector missed beside ones it found stay
+     * inside. Returns [left, top, width, height], or null when cropping
+     * is pointless (no text, or even the slackened crop covers >80% of
+     * the frame — near-identical to reading the full photo) or
+     * suspicious (a speck of text).
+     */
+    private fun textRegionCrop(detection:PaddleTextDetector.Detection,width:Int,height:Int):IntArray? {
+        val lines=detection.regions.lines
+        if(lines.isEmpty() || width<=0 || height<=0) return null
+        var left=Float.MAX_VALUE; var top=Float.MAX_VALUE; var right=0f; var bottom=0f
+        lines.forEach { region -> region.quadBase.forEach { point ->
+            left=minOf(left,point.x); top=minOf(top,point.y); right=maxOf(right,point.x); bottom=maxOf(bottom,point.y)
+        } }
+        val unionW=right-left; val unionH=bottom-top
+        if(unionW<=0f || unionH<=0f) return null
+        val marginX=unionW*0.5f; val marginY=unionH*0.5f
+        val cropLeft=maxOf(0f,left-marginX).toInt()
+        val cropTop=maxOf(0f,top-marginY).toInt()
+        val cropRight=minOf(width.toFloat(),right+marginX).toInt().coerceAtLeast(cropLeft+1)
+        val cropBottom=minOf(height.toFloat(),bottom+marginY).toInt().coerceAtLeast(cropTop+1)
+        val cropW=cropRight-cropLeft; val cropH=cropBottom-cropTop
+        val areaFraction=cropW.toDouble()*cropH/(width.toDouble()*height)
+        if(areaFraction>0.80 || areaFraction<0.03) return null
+        return intArrayOf(cropLeft,cropTop,cropW,cropH)
     }
 
     /**
