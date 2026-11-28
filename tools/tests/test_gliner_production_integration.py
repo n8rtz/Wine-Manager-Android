@@ -64,35 +64,23 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         self.assertGreaterEqual(session.count('warmUp(app)'),2)
         self.assertIn('GlinerScanWarmup.discard()',session)
 
-    def test_ocr_crops_conservatively_or_reads_full_frame(self):
+    def test_ocr_reads_full_frame_with_detector_regions(self):
         ocr=self.text(GL/'GlinerOcr.kt')
         runner=self.text(GL/'GlinerLabRunner.kt')
         scanner=self.text(GL/'GlinerProductionScanner.kt')
         # Detection runs first and its regions drive the line recognizer;
         # the detector is not run a second time for the recognizer.
         self.assertLess(ocr.index('detectRegions(context,bitmap,workspace,spec)'),
-                        ocr.index('readMlKit(ocrBitmap,deadline)'))
+                        ocr.index('readMlKit(bitmap,deadline)'))
         self.assertEqual(ocr.count('PaddleTextDetector.detect'),1)
-        # The crop is conservative: half a text-union of slack on every
-        # side keeps detector-missed neighbour lines inside (the tight
-        # 10% crop amputated them and cost fields), and cropping only
-        # happens when the slackened crop still excludes >=20% of the
-        # frame — anything closer reads the full photo unchanged.
-        self.assertIn('val marginX=unionW*0.5f',ocr)
-        self.assertIn('val marginY=unionH*0.5f',ocr)
-        self.assertIn('if(areaFraction>0.80 || areaFraction<0.03) return null',ocr)
-        self.assertNotIn('unionW*0.10f',ocr)
-        self.assertNotIn('unionH*0.10f',ocr)
-        # Both engines read the crop; Paddle regions are shifted into
-        # crop coordinates rather than re-detected.
-        self.assertIn('readPaddle(context,ocrBitmap,workspace,spec,deadlineAtMs,regions)',ocr)
-        self.assertIn('PointF(point.x-crop[0],point.y-crop[1])',ocr)
-        # The full-size bitmap is released once the crop exists, freeing
-        # BitmapWorkspace's second slot for the recognizer warp (leaving
-        # it owned once silently zeroed PP-OCRv6 on cropped photos).
-        release=ocr.index('if(crop!=null) workspace.release(bitmap)')
-        self.assertLess(ocr.index('Bitmap.createBitmap(bitmap,crop[0],crop[1],crop[2],crop[3])'),release)
-        self.assertLess(release,ocr.index('readMlKit(ocrBitmap,deadline)'))
+        # Both engines read the full photo. ML Kit must see lines the
+        # detector missed: a text-region crop amputated exactly those
+        # lines and jittered the rest (lab A/B), costing fields.
+        self.assertIn('val regions=detection.regions.lines',ocr)
+        self.assertIn('readPaddle(context,bitmap,workspace,spec,deadlineAtMs,regions)',ocr)
+        self.assertNotIn('textRegionCrop',ocr)
+        self.assertNotIn('Bitmap.createBitmap(bitmap,crop[0]',ocr)
+        self.assertIn('"full frame"',ocr)
         # Diagnostics say which path a scan actually took.
         self.assertIn('croppedToTextRegion=ocr.croppedToTextRegion',runner)
         self.assertIn('if(result.croppedToTextRegion) "text_region_crop" else "full_photo_gliner"',scanner)
