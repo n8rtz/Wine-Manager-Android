@@ -46,6 +46,8 @@ import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
+private const val BUNDLED_V1_BASELINE_ASSET="gliner-v1-baseline/results.json"
+
 internal data class GlinerLabRow(
     val index:Int,
     val sample:GlinerLabSample,
@@ -228,6 +230,22 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                     known[sample.image]?.copy(index=index) ?: GlinerLabRow(index,sample)
                 },total=if(state.running) state.total else samples.size)
             }
+            // Bake-in: with no run yet this session, seed the
+            // scoreboard from the bundled GLiNER v1 export so only
+            // GLiNER v2 needs to run for a comparison.
+            val seeded=mutable.value
+            if(seeded.samples.none { it.result!=null } && seeded.aggregate==null) {
+                bundledV1Baseline(seeded.samples)?.let { (rows,matched) ->
+                    if(matched>0) mutable.update { state ->
+                        if(state.samples.none { it.result!=null } && state.aggregate==null) {
+                            state.copy(samples=rows,
+                                aggregate=aggregateGlinerRows(rows,stopped=false),
+                                runVariant="GLiNER v1",
+                                message="Bundled GLiNER v1 baseline loaded ($matched/${rows.size} photos, rescored against current references). Run GLiNER v2 to compare.")
+                        } else state
+                    }
+                }
+            }
         }
     }
 
@@ -348,6 +366,68 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     }
 
     /**
+     * Rescore an exported GLiNER v1 run's predictions against the
+     * current references of [samples]. Returns the updated rows and
+     * the number of corpus photos matched by image id.
+     */
+    private fun rescoreV1Export(document:JSONObject,samples:List<GlinerLabRow>):Pair<List<GlinerLabRow>,Int> {
+        val images=document.optJSONArray("images") ?: throw IllegalArgumentException("Export has no images array")
+        val byImage=mutableMapOf<String,JSONObject>()
+        for(i in 0 until images.length()) {
+            val item=images.optJSONObject(i) ?: continue
+            byImage[item.optString("image")]=item
+        }
+        var matched=0
+        val updated=samples.map { row ->
+            val item=byImage[row.sample.image] ?: return@map row
+            matched++
+            val fieldsJson=item.optJSONObject("fields")
+            val fields=PhoneCorpusMath.fields.associateWith { f -> fieldsJson?.optString(f).orEmpty() }
+            val statesJson=item.optJSONObject("states")
+            val states=PhoneCorpusMath.fields.associateWith { f -> statesJson?.optString(f).orEmpty() }
+            val failed=item.optString("status")!="complete"
+            val outcomes=PhoneCorpusMath.fields.associateWith { f ->
+                PhoneCorpusMath.outcome(row.sample.target(f),fields[f].orEmpty(),failed)
+            }
+            val imported=GlinerLabImageResult(
+                image=row.sample.image,reviewNumber=row.sample.reviewNumber,
+                status=item.optString("status"),message=item.optString("message"),
+                ocrLines=item.optJSONArray("ocr_lines")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+                observations=emptyList(),
+                laneTexts=GlinerLane.ordered.associate { lane -> lane.key to (item.optJSONObject("lanes")?.optString(lane.key).orEmpty()) },
+                residualTexts=item.optJSONArray("residual")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+                fields=fields,fieldStates=states,
+                fieldResults=PhoneCorpusMath.fields.map { f ->
+                    com.yourapp.wine.gliner.GlinerFieldResult(f,GlinerLabRunner.fieldLabels.getValue(f),
+                        row.sample.target(f).display,fields[f].orEmpty(),states[f].orEmpty(),outcomes.getValue(f))
+                },
+                eligible=PhoneCorpusMath.eligible(PhoneCorpusMath.fields.associateWith { f -> row.sample.target(f) }),
+                errorCount=outcomes.values.count { o -> !PhoneCorpusMath.correct(o) },
+                wordCount=item.optInt("words"),spanCount=item.optInt("spans"),
+                layout=item.optString("layout"),outputShape=item.optString("output_shape"),
+                modelSignature=item.optString("model"),int4=item.optBoolean("int4",true),
+                ocrMs=item.optLong("ocr_ms"),glinerMs=item.optLong("gliner_ms"),
+                postMs=item.optLong("post_ms"),totalMs=item.optLong("total_ms"),
+                notes=item.optString("notes"),
+                baseFields=item.optJSONObject("base_fields")?.let { json ->
+                    PhoneCorpusMath.fields.associateWith { f -> json.optString(f) } } ?: emptyMap(),
+                baseOutcomes=item.optJSONObject("base_outcomes")?.let { json ->
+                    PhoneCorpusMath.fields.associateWith { f -> json.optString(f) } } ?: emptyMap(),
+                fieldDecisions=item.optJSONArray("gliner_decisions")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+            )
+            row.copy(status=imported.status,result=imported)
+        }
+        return updated to matched
+    }
+
+    /** Bundled GLiNER v1 results, loaded automatically when the corpus first appears. */
+    private fun bundledV1Baseline(samples:List<GlinerLabRow>):Pair<List<GlinerLabRow>,Int>? = runCatching {
+        val document=JSONObject(app.assets.open(BUNDLED_V1_BASELINE_ASSET).bufferedReader(Charsets.UTF_8).use { it.readText() })
+        require(document.optString("pipeline")=="gliner-lane-v1")
+        rescoreV1Export(document,samples)
+    }.getOrNull()
+
+    /**
      * Import a previously exported GLiNER v1 corpus run ("Save JSON")
      * as the saved v1 scoreboard state. Predictions are rescored
      * against the current references; no model is run. Running
@@ -361,53 +441,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             val result=runCatching {
                 val document=GlinerAuditStore.readDocument(app,uri)
                 require(document.optString("pipeline")=="gliner-lane-v1") { "Not a GLiNER lab export" }
-                val images=document.optJSONArray("images") ?: throw IllegalArgumentException("Export has no images array")
-                val byImage=mutableMapOf<String,JSONObject>()
-                for(i in 0 until images.length()) {
-                    val item=images.optJSONObject(i) ?: continue
-                    byImage[item.optString("image")]=item
-                }
-                require(byImage.isNotEmpty()) { "Export has no image results" }
-                var matched=0
-                val samples=mutable.value.samples.map { row ->
-                    val item=byImage[row.sample.image] ?: return@map row
-                    matched++
-                    val fieldsJson=item.optJSONObject("fields")
-                    val fields=PhoneCorpusMath.fields.associateWith { f -> fieldsJson?.optString(f).orEmpty() }
-                    val statesJson=item.optJSONObject("states")
-                    val states=PhoneCorpusMath.fields.associateWith { f -> statesJson?.optString(f).orEmpty() }
-                    val failed=item.optString("status")!="complete"
-                    val outcomes=PhoneCorpusMath.fields.associateWith { f ->
-                        PhoneCorpusMath.outcome(row.sample.target(f),fields[f].orEmpty(),failed)
-                    }
-                    val imported=GlinerLabImageResult(
-                        image=row.sample.image,reviewNumber=row.sample.reviewNumber,
-                        status=item.optString("status"),message=item.optString("message"),
-                        ocrLines=item.optJSONArray("ocr_lines")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
-                        observations=emptyList(),
-                        laneTexts=GlinerLane.ordered.associate { lane -> lane.key to (item.optJSONObject("lanes")?.optString(lane.key).orEmpty()) },
-                        residualTexts=item.optJSONArray("residual")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
-                        fields=fields,fieldStates=states,
-                        fieldResults=PhoneCorpusMath.fields.map { f ->
-                            com.yourapp.wine.gliner.GlinerFieldResult(f,GlinerLabRunner.fieldLabels.getValue(f),
-                                row.sample.target(f).display,fields[f].orEmpty(),states[f].orEmpty(),outcomes.getValue(f))
-                        },
-                        eligible=PhoneCorpusMath.eligible(PhoneCorpusMath.fields.associateWith { f -> row.sample.target(f) }),
-                        errorCount=outcomes.values.count { o -> !PhoneCorpusMath.correct(o) },
-                        wordCount=item.optInt("words"),spanCount=item.optInt("spans"),
-                        layout=item.optString("layout"),outputShape=item.optString("output_shape"),
-                        modelSignature=item.optString("model"),int4=item.optBoolean("int4",true),
-                        ocrMs=item.optLong("ocr_ms"),glinerMs=item.optLong("gliner_ms"),
-                        postMs=item.optLong("post_ms"),totalMs=item.optLong("total_ms"),
-                        notes=item.optString("notes"),
-                        baseFields=item.optJSONObject("base_fields")?.let { json ->
-                            PhoneCorpusMath.fields.associateWith { f -> json.optString(f) } } ?: emptyMap(),
-                        baseOutcomes=item.optJSONObject("base_outcomes")?.let { json ->
-                            PhoneCorpusMath.fields.associateWith { f -> json.optString(f) } } ?: emptyMap(),
-                        fieldDecisions=item.optJSONArray("gliner_decisions")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
-                    )
-                    row.copy(status=imported.status,result=imported)
-                }
+                val (samples,matched)=rescoreV1Export(document,mutable.value.samples)
                 Triple(samples,matched,document.optString("build") to document.optString("decision_policy"))
             }
             mutable.update { state -> result.fold(onSuccess={ (samples,matched,meta) ->

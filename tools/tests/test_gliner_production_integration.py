@@ -137,4 +137,17 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         activity=(ROOT/'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabActivity.kt').read_text()
         self.assertIn('uri?.let(vm::importV1Results)',activity)
 
+    def test_bundled_v1_baseline_is_baked_in_and_auto_loaded(self):
+        asset=ROOT/'app/src/main/assets/gliner-v1-baseline/results.json'
+        self.assertTrue(asset.exists())
+        import json as _json
+        doc=_json.loads(asset.read_text())
+        self.assertEqual(doc['pipeline'],'gliner-lane-v1')
+        self.assertEqual(len(doc['images']),193)
+        self.assertTrue(all('fields' in im and 'total_ms' in im for im in doc['images']))
+        viewmodel=(ROOT/'gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt').read_text()
+        self.assertIn('BUNDLED_V1_BASELINE_ASSET="gliner-v1-baseline/results.json"',viewmodel)
+        self.assertIn('bundledV1Baseline(seeded.samples)',viewmodel)
+        self.assertIn('Bundled GLiNER v1 baseline loaded',viewmodel)
+
 if __name__=='__main__': unittest.main()
