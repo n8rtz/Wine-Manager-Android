@@ -231,7 +231,7 @@ internal object GlinerOcr {
                 try { PaddleTextRecognizer.release(gate) } finally { PaddleTextDetector.release(gate) }
             }
         }
-        return lines
+        return lines to firstError
     }
 
     private fun normalizedBox(quad:List<android.graphics.PointF>,width:Int,height:Int):RectF {
