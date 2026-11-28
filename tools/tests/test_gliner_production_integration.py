@@ -98,10 +98,30 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
     def test_production_image_never_deleted_by_shared_runner(self):
         lab=self.text(GL/'GlinerLabRunner.kt')
         copy_scope=lab[lab.index('suspend fun run('):lab.index('suspend fun runProduction(')]
-        photo_scope=lab[lab.index('suspend fun runProduction('):lab.index('private data class PostOutcome')]
+        photo_scope=lab[lab.index('suspend fun runProduction('):lab.index('/** Per-photo budget of the production scanner')]
         self.assertIn('photo.delete()',copy_scope)
         self.assertNotIn('photo.delete()',photo_scope)
         self.assertIn('true,emptyMap()',photo_scope)
         self.assertIn('deadlineAtMs',photo_scope)
+
+    def test_gliner_v2_is_the_production_pipeline_over_the_corpus(self):
+        lab=self.text(GL/'GlinerLabRunner.kt')
+        self.assertIn('suspend fun runProductionVariant(',lab)
+        variant=lab[lab.index('suspend fun runProductionVariant('):lab.index('private suspend fun runPhoto')]
+        # Identical computation to production: default lane config,
+        # production modules, production 90s per-photo deadline; the
+        # corpus sample (and its references) only drive scoring.
+        self.assertIn('GlinerLaneConfig(),warm',variant)
+        self.assertIn('LabPostOcrModules.none.withIntegrated(),started,started+PRODUCTION_SCAN_BUDGET_MS',variant)
+        self.assertIn('const val PRODUCTION_SCAN_BUDGET_MS=90_000L',lab)
+        viewmodel=(ROOT/'gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt').read_text()
+        self.assertIn('fun runAllV2() = launchRun(only=null,custom=false,production=true)',viewmodel)
+        self.assertIn('GlinerLabRunner.runProductionVariant(app,row.sample,opened,warmSession,workFolder)',viewmodel)
+        self.assertIn('extractor.warmUp()',viewmodel)
+        self.assertIn('if(production) "GLiNER v2" else "GLiNER v1"',viewmodel)
+        screen=(ROOT/'gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt').read_text()
+        self.assertIn('Start GLiNER v1 run',screen)
+        self.assertIn('Start GLiNER v2 run (production pipeline)',screen)
+        self.assertIn('priorAggregate',viewmodel)
 
 if __name__=='__main__': unittest.main()

@@ -57,6 +57,7 @@ class GlinerLabActivity:ComponentActivity() {
                         onClearBundle=vm::clearBundle,
                         onRefresh=vm::refresh,
                         onRunAll=vm::runAll,
+                        onRunV2=vm::runAllV2,
                         onRunImage={ image -> vm.runSingle(image) },
                         onChooseImages={ imageLauncher.launch(arrayOf("image/*")) },
                         onRunCustom=vm::runCustomAll,

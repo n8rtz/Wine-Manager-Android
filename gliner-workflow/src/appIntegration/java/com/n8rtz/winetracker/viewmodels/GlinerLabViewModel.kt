@@ -102,6 +102,12 @@ internal data class GlinerLabState(
     val exports:List<File> = emptyList(),
     val expanded:Set<String> = emptySet(),
     val modelsReady:Boolean=false,
+    /** Which pipeline produced the current corpus results: "GLiNER v1" (lab) or "GLiNER v2" (production copy). */
+    val runVariant:String="GLiNER v1",
+    /** Previous corpus run retained so v1 and v2 scoreboards can be compared side by side. */
+    val priorRunVariant:String="",
+    val priorAggregate:GlinerAggregate?=null,
+    val priorMeanTotalMs:Long=0,
     /** Time to make the bundle files readable (asset copy or import check), in milliseconds. */
     val bundleMs:Long=0,
     /** Time to parse the tokenizer and create the ONNX session, in milliseconds. */
@@ -509,6 +515,8 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     }
 
     fun runAll() = launchRun(only=null,custom=false)
+    /** GLiNER v2: the production scanner pipeline over the same corpus. */
+    fun runAllV2() = launchRun(only=null,custom=false,production=true)
     fun runSingle(image:String) = launchRun(only=image,custom=false)
     fun runCustomAll() = launchRun(only=null,custom=true)
     fun runCustomSingle(image:String) = launchRun(only=image,custom=true)
@@ -616,7 +624,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         }
     }
 
-    private fun launchRun(only:String?,custom:Boolean) {
+    private fun launchRun(only:String?,custom:Boolean,production:Boolean=false) {
         if(job?.isActive==true || mutable.value.importingImages) return
         val bundle=mutable.value.bundle
         if(!bundle.ready) {
@@ -628,8 +636,10 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             mutable.update { it.copy(message=if(custom) "Choose images first" else "The packaged dataset is still loading") }
             return
         }
-        val laneConfig=mutable.value.laneConfig
-        val modules=mutable.value.modules
+        // GLiNER v2 ignores lab tweaks: production uses the default
+        // lane configuration and the integrated production module set.
+        val laneConfig=if(production) GlinerLaneConfig() else mutable.value.laneConfig
+        val modules=if(production) LabPostOcrModules.none.withIntegrated() else mutable.value.modules
         val targets=source.filter { it.sample.included && (only==null || it.sample.image==only) }
         if(targets.isEmpty()) {
             mutable.update { it.copy(message="No selected images to run") }
@@ -638,6 +648,11 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         val targetImages=targets.map { it.sample.image }.toSet()
         mutable.update { state ->
             state.copy(running=true,runningCustom=custom,reviewPrompt=false,finished=false,stopped=false,done=0,total=targets.size,current="",
+                runVariant=if(custom) state.runVariant else if(production) "GLiNER v2" else "GLiNER v1",
+                priorRunVariant=if(custom || state.aggregate==null) state.priorRunVariant else state.runVariant,
+                priorAggregate=if(custom || state.aggregate==null) state.priorAggregate else state.aggregate,
+                priorMeanTotalMs=if(custom || state.aggregate==null) state.priorMeanTotalMs else
+                    state.samples.mapNotNull { it.result?.totalMs }.takeIf { it.isNotEmpty() }?.average()?.toLong() ?: 0L,
                 aggregate=if(custom) state.aggregate else null,message="",
                 runStartedMs=SystemClock.elapsedRealtime(),firstResultMs=0,runElapsedMs=0,
                 samples=if(custom) state.samples else state.samples.map { row ->
@@ -668,13 +683,24 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 mutable.update { it.copy(tokenizer=opened.tokenizerDescription,modelMs=modelMs,bundleMs=bundleMs) }
                 val warmSession=TextLabWineExtraction.WarmSession(app)
                 warm=warmSession
+                if(production) {
+                    // Mirror the production warm-up: extractor/hybrid/
+                    // repair exist and the extractor's lazy indexes are
+                    // built before the first photo, not inside it.
+                    val kb=warmSession.knowledgeBase()
+                    val extractor=warmSession.evidenceExtractor(kb,true,true,modules)
+                    runCatching { extractor.warmUp() }
+                    warmSession.anchorHybrid(kb)
+                    warmSession.producerRepair(kb)
+                }
                 targets.forEachIndexed { index,row ->
                     currentCoroutineContext().ensureActive()
                     mutable.update { it.copy(current=row.displayName) }
                     GlinerLabRunService.update(app,"${index}/${targets.size} · ${row.displayName}")
                     setStatus(row.sample.image,"Running")
                     val result=try {
-                        GlinerLabRunner.run(app,row.sample,opened,laneConfig,warmSession,workFolder,modules)
+                        if(production) GlinerLabRunner.runProductionVariant(app,row.sample,opened,warmSession,workFolder)
+                        else GlinerLabRunner.run(app,row.sample,opened,laneConfig,warmSession,workFolder,modules)
                     } catch(cancel:CancellationException) {
                         setStatus(row.sample.image,"Stopped")
                         throw cancel
@@ -789,6 +815,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             }
             val payload=JSONObject().apply {
                 put("pipeline","gliner-lane-v1")
+                put("gliner_variant",snapshot.runVariant)
                 put("decision_policy",GlinerFieldDecisionPolicy.VERSION)
                 put("build",BuildConfig.BUILD_COMMIT)
                 put("branch",BuildConfig.BUILD_BRANCH)

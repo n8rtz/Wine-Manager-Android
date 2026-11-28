@@ -147,6 +147,34 @@ internal object GlinerLabRunner {
             LabPostOcrModules.none.withIntegrated(),SystemClock.elapsedRealtime(),deadlineAtMs,onStage)
     }
 
+    /** Per-photo budget of the production scanner (ProductionLabelScanner.BUDGET_MS). */
+    const val PRODUCTION_SCAN_BUDGET_MS=90_000L
+
+    /**
+     * GLiNER v2: the production wine scanner's exact pipeline (default
+     * lane config, production module set, per-photo 90 s deadline, so
+     * the production evidence budget applies) over a scored corpus
+     * sample. Identical computation to a production photo scan; only
+     * the sample (and therefore the scoring) comes from the lab.
+     */
+    suspend fun runProductionVariant(
+        context:Context,
+        sample:GlinerLabSample,
+        model:GlinerOnnxModel,
+        warm:TextLabWineExtraction.WarmSession,
+        workFolder:File,
+    ):GlinerLabImageResult = withContext(Dispatchers.Default) {
+        val started=SystemClock.elapsedRealtime()
+        val photo=File(workFolder,"${sample.image}")
+        try {
+            GlinerLabCorpus.copyTo(context,sample,photo)
+            runPhoto(context,photo,sample,model,GlinerLaneConfig(),warm,
+                LabPostOcrModules.none.withIntegrated(),started,started+PRODUCTION_SCAN_BUDGET_MS)
+        } finally {
+            photo.delete()
+        }
+    }
+
     private suspend fun runPhoto(context:Context,photo:File,sample:GlinerLabSample,model:GlinerOnnxModel,
         laneConfig:GlinerLaneConfig,warm:TextLabWineExtraction.WarmSession,modules:LabPostOcrModules,
         started:Long,deadlineAtMs:Long=Long.MAX_VALUE,

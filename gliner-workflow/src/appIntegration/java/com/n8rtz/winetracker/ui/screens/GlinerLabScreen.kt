@@ -100,7 +100,7 @@ internal fun GlinerLabScreen(
     state:GlinerLabState,
     labState:WineAppLabelsState,
     onImport:()->Unit, onClearBundle:()->Unit, onRefresh:()->Unit,
-    onRunAll:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
+    onRunAll:()->Unit, onRunV2:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
     onChooseImages:()->Unit, onRunCustom:()->Unit, onRunCustomImage:(String)->Unit,
     onImportAudit:()->Unit, onUseBundledAudit:()->Unit, onRunAudit:()->Unit, onSaveAudit:()->Unit, onSaveReviewedAudit:()->Unit,
     onSaveAuditField:(String,String,String,Boolean)->Unit,
@@ -180,7 +180,10 @@ internal fun GlinerLabScreen(
             }
             if(state.running) LinearProgressIndicator(Modifier.fillMaxWidth())
             Button(onClick=onRunAll,enabled=!state.running && state.bundle.ready && state.samples.isNotEmpty()) {
-                Text(if(state.ran) "New GLiNER run" else "Start GLiNER run")
+                Text(if(state.ran) "New GLiNER v1 run" else "Start GLiNER v1 run")
+            }
+            Button(onClick=onRunV2,enabled=!state.running && state.bundle.ready && state.samples.isNotEmpty()) {
+                Text("Start GLiNER v2 run (production pipeline)")
             }
             SelectionContainer { RunTimers(elapsed,state.done,state.total) }
             Row {
@@ -193,7 +196,10 @@ internal fun GlinerLabScreen(
         item(key="curated_scores") {
             SelectionContainer {
                 ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState,
-                    state.samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet())
+                    state.samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet(),
+                    variant=state.runVariant,priorVariant=state.priorRunVariant,prior=state.priorAggregate,
+                    meanTotalMs=state.samples.mapNotNull { it.result?.totalMs }.takeIf { it.isNotEmpty() }?.average()?.toLong() ?: 0L,
+                    priorMeanTotalMs=state.priorMeanTotalMs)
             }
         }
         item(key="custom_heading") {
@@ -539,18 +545,26 @@ private fun RunTimers(elapsed:Long,done:Int,total:Int) {
 }
 
 @Composable
-private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,completedImages:Set<String>) {
+private fun ScoredResults(a:GlinerAggregate,labState:WineAppLabelsState,completedImages:Set<String>,
+    variant:String="GLiNER v1",priorVariant:String="",prior:GlinerAggregate?=null,
+    meanTotalMs:Long=0,priorMeanTotalMs:Long=0) {
     val baselines=glinerLabBaselines(labState,completedImages)
-    val glinerValues=listOf("GLiNER",a.attempted.toString(),a.eligible.toString(),"${a.complete}/${a.eligible}",a.oneError.toString(),a.multiError.toString(),a.failed.toString())
-    val glinerFields=fieldLabels.associate { (key,_) ->
-        val correct=a.fieldCorrect[key] ?: 0
-        key to WineAppLabelsBuildLog.FieldScore(correct,(a.fieldTotal[key] ?: 0)-correct)
+    fun summaryRow(label:String,agg:GlinerAggregate)=listOf(label,agg.attempted.toString(),agg.eligible.toString(),
+        "${agg.complete}/${agg.eligible}",agg.oneError.toString(),agg.multiError.toString(),agg.failed.toString())
+    fun fieldsOf(agg:GlinerAggregate)=fieldLabels.associate { (key,_) ->
+        val correct=agg.fieldCorrect[key] ?: 0
+        key to WineAppLabelsBuildLog.FieldScore(correct,(agg.fieldTotal[key] ?: 0)-correct)
     }
+    val priorRows=if(prior!=null && priorVariant.isNotBlank()) listOf(summaryRow(priorVariant,prior)) else emptyList()
+    val priorFields=if(prior!=null && priorVariant.isNotBlank()) listOf(priorVariant to fieldsOf(prior)) else emptyList()
     Column(Modifier.testTag("gliner_curated_score_tables")) {
         Text("Scored results",style=MaterialTheme.typography.titleMedium)
-        ScoreSummaryTable(listOf(glinerValues)+baselines.map { it.summary ?: listOf(it.title,"—","—","—","—","—","—") })
+        ScoreSummaryTable(listOf(summaryRow(variant,a))+priorRows+baselines.map { it.summary ?: listOf(it.title,"—","—","—","—","—","—") })
         Spacer(Modifier.height(8.dp))
-        ScoreFieldTable(listOf("GLiNER" to glinerFields)+baselines.map { it.title to it.fields })
+        ScoreFieldTable(listOf(variant to fieldsOf(a))+priorFields+baselines.map { it.title to it.fields })
+        if(meanTotalMs>0) Text("Avg total per image — $variant: ${"%.1f".format(meanTotalMs/1000f)}s" +
+            (if(priorMeanTotalMs>0) " · $priorVariant: ${"%.1f".format(priorMeanTotalMs/1000f)}s" else ""),
+            style=MaterialTheme.typography.bodySmall)
         if(baselines.any { it.summary==null }) Text(
             if(labState.busy) "Loading saved baselines…" else "— = no saved results for this cohort.",
             style=MaterialTheme.typography.bodySmall)
