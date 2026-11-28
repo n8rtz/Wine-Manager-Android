@@ -120,7 +120,11 @@ internal object GlinerScanWarmup {
      */
     private fun prebuildPostProcessors(session: TextLabWineExtraction.WarmSession) {
         val kb = session.knowledgeBase()
-        session.evidenceExtractor(kb, true, true, LabPostOcrModules.none.withIntegrated())
+        val extractor = session.evidenceExtractor(kb, true, true, LabPostOcrModules.none.withIntegrated())
+        // Pay the extractor's lazy first-use builds (gazetteer trie,
+        // catalog key sets) now, in the background, not inside the
+        // first scan's evidence stage.
+        runCatching { extractor.warmUp() }
         session.anchorHybrid(kb)
         session.producerRepair(kb)
         Log.d(TAG, "GlinerScanWarmup: post-processors pre-built")

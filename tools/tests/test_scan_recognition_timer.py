@@ -187,6 +187,9 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         # Scan awaits only the KB+gazetteer core; extractor pre-build is
         # background, and warm-up starts at app launch.
         self.assertIn('private fun prebuildPostProcessors', warmup)
+        self.assertIn('extractor.warmUp()', warmup)
+        extractor_src = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceExtractor.kt').read_text()
+        self.assertIn('internal fun warmUp()', extractor_src)
         self.assertIn('prepJob = scope.async', warmup)
         self.assertIn('ProductionLabelScanSession.warmUp(this)', app)
 
