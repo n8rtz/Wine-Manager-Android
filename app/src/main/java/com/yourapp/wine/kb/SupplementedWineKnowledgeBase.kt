@@ -7,10 +7,22 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
     private var indexed: List<Place>? = null
     private var snapshot: List<Place> = emptyList()
 
+    companion object {
+        // Several pipeline stages wrap the same base KB; the merged
+        // view depends only on the base places list instance, so one
+        // computed snapshot is shared by every wrapper around it.
+        // A KB import publishes a new base list, which naturally
+        // misses this cache and recomputes.
+        private val sharedSnapshots = java.util.WeakHashMap<List<Place>, List<Place>>()
+    }
+
     /** No coordinates: merge existing curated origins into a cached immutable view, including on already-installed databases. */
     @Synchronized override fun places(): List<Place> {
         val current = base.places()
         if (current === indexed) return snapshot
+        synchronized(sharedSnapshots) {
+            sharedSnapshots[current]?.let { shared -> snapshot = shared; indexed = current; return shared }
+        }
         val rows = current.toMutableList()
         val occupied = rows.map { it.id }.toMutableSet()
         val byName = rows.groupBy { it.countryCode to it.nameNorm }.mapValues { it.value.toMutableList() }.toMutableMap()
@@ -72,6 +84,7 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
             }
         }
         snapshot = rows.toList(); indexed = current
+        synchronized(sharedSnapshots) { sharedSnapshots[current] = snapshot }
         return snapshot
     }
 

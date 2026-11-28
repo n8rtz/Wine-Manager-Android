@@ -143,6 +143,10 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertIn('val seenPhrases=mutableSetOf<Pair<Set<Int>,String>>()', graph)
         self.assertIn('val singlePass=singles.map { passFor(it.observations) }', graph)
         self.assertIn('val ak=singleCompact[ai];val bk=singleCompact[bi]', graph)
+        gaz = (ROOT / 'app/src/main/java/com/yourapp/wine/kb/PlaceGazetteer.kt').read_text()
+        self.assertIn('private val sharedRoots = java.util.WeakHashMap<List<Place>, Node>()', gaz)
+        supp = (ROOT / 'app/src/main/java/com/yourapp/wine/kb/SupplementedWineKnowledgeBase.kt').read_text()
+        self.assertIn('private val sharedSnapshots = java.util.WeakHashMap<List<Place>, List<Place>>()', supp)
         # Previously unmeasured scanner time is now staged.
         self.assertIn('ScanStage.WARM_SESSION,warmPickupMs', scanner)
         self.assertIn('ScanStage.FIELD_ADAPTER,adapterMs', scanner)
