@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.net.Uri
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -39,7 +40,12 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.BorderStroke
@@ -81,17 +87,17 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
-    
+
     // Consolidate database and repository as single instances for the entire app lifecycle
     private val database by lazy {
         Log.d("WineTracker", "MainActivity: Initializing database builder")
         androidx.room.Room.databaseBuilder(
             applicationContext,
-            com.n8rtz.winetracker.data.local.WineDatabase::class.java, 
+            com.n8rtz.winetracker.data.local.WineDatabase::class.java,
             "wine-database"
         )
         .addMigrations(
-            com.n8rtz.winetracker.data.local.MIGRATION_5_6, 
+            com.n8rtz.winetracker.data.local.MIGRATION_5_6,
             com.n8rtz.winetracker.data.local.MIGRATION_6_7,
             com.n8rtz.winetracker.data.local.MIGRATION_7_8,
             com.n8rtz.winetracker.data.local.MIGRATION_8_9,
@@ -323,7 +329,7 @@ private fun BottomBarLabel(text: String, fontSize: TextUnit) {
 
 @Composable
 fun MainAppScaffold(
-    navController: androidx.navigation.NavHostController, 
+    navController: androidx.navigation.NavHostController,
     viewModel: WineViewModel,
     tastingNoteViewModel: TastingNoteViewModel,
     rankingsViewModel: RankingsViewModel,
@@ -333,6 +339,108 @@ fun MainAppScaffold(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
     val currentRoute = currentDestination?.route
+    var isMenuExpanded by remember { mutableStateOf(false) }
+    // True while the cellar's bottom wine action bar is showing; the "+"
+    // Add button/menu disappears for as long as it is up.
+    var wineActionBarVisible by remember { mutableStateOf(false) }
+    var menuHistory by remember { mutableStateOf(listOf("cellar")) }
+    // Whether the tab switch currently being navigated to should slide.
+    // Only swipe-initiated switches slide; bottom-bar taps (and every
+    // other caller of navigateToMenu) just fade.
+    var tabSwitchSlides by remember { mutableStateOf(false) }
+    fun navigateToMenu(route: String, slide: Boolean = false) {
+        tabSwitchSlides = slide
+        if (menuHistory.lastOrNull() != route) menuHistory = menuHistory + route
+        navigateToTab(navController, route)
+    }
+    // Swipe between the main screens (Cellar, Notes, History, Rankings,
+    // Profile). Detection runs on the Initial pointer pass — before any
+    // child sees the event — so no card, list, tab row or text field can
+    // veto it, wherever the swipe starts. A gesture becomes a tab swipe
+    // when it crosses the threshold quickly and mostly horizontally;
+    // then it is claimed (consumed) so children stop reacting to it.
+    // Two kinds of child gestures keep priority:
+    //  - inner pagers (Cellar Bottles/Racks, History tabs) while they can
+    //    still move in the swipe direction — at their edge the swipe
+    //    spills over to the main tab (see InnerPagerSwipeGate);
+    //  - slow drags (long-press rack reorders, note date-tab drags,
+    //    text-field drags): if the threshold is crossed slowly, the
+    //    gesture is left entirely to the child.
+    val currentRouteState = rememberUpdatedState(currentRoute)
+    val navigateToMenuState = rememberUpdatedState { route: String -> navigateToMenu(route, slide = true) }
+    val tabSwipeModifier = Modifier.pointerInput(Unit) {
+        val thresholdPx = 60.dp.toPx()
+        awaitPointerEventScope {
+            var downPosition: Offset? = null
+            var downTimeMs = 0L
+            var decided = false
+            var claimed = false
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val change = event.changes.firstOrNull() ?: continue
+                if (change.pressed && !change.previousPressed) {
+                    downPosition = change.position
+                    downTimeMs = change.uptimeMillis
+                    decided = false
+                    claimed = false
+                } else if (change.pressed && downPosition != null && !decided) {
+                    val delta = change.position - downPosition!!
+                    val absX = kotlin.math.abs(delta.x)
+                    val absY = kotlin.math.abs(delta.y)
+                    // Wait until the gesture has a clear direction.
+                    if (absX >= thresholdPx || absY >= thresholdPx) {
+                        decided = true
+                        val route = currentRouteState.value
+                        val index = route?.let { TOP_LEVEL_MENU_ORDER.indexOf(it) } ?: -1
+                        val quick = change.uptimeMillis - downTimeMs <= 450L
+                        if (index >= 0 && quick && absX >= thresholdPx && absX >= absY * 1.4f) {
+                            val toNext = delta.x < 0
+                            val pagerCanMove = route in PAGER_SWIPE_ROUTES &&
+                                (if (toNext) InnerPagerSwipeGate.blocksSwipeToNext
+                                 else InnerPagerSwipeGate.blocksSwipeToPrevious)
+                            if (!pagerCanMove) {
+                                val target = if (toNext) {
+                                    TOP_LEVEL_MENU_ORDER.getOrNull(index + 1)
+                                } else {
+                                    TOP_LEVEL_MENU_ORDER.getOrNull(index - 1)
+                                }
+                                if (target != null) {
+                                    claimed = true
+                                    change.consume()
+                                    navigateToMenuState.value(target)
+                                }
+                            }
+                        }
+                    }
+                } else if (change.pressed && claimed) {
+                    change.consume()
+                } else if (!change.pressed && change.previousPressed) {
+                    if (claimed) change.consume()
+                    downPosition = null
+                    decided = false
+                    claimed = false
+                }
+            }
+        }
+    }
+    val hasPreviousMenu = menuHistory.size > 1
+    BackHandler(enabled = isMenuExpanded || currentRoute != null && (currentRoute !in TOP_LEVEL_MENU_ROUTES || hasPreviousMenu)) {
+        if (isMenuExpanded) {
+            isMenuExpanded = false
+        } else if (currentRoute != null && currentRoute in TOP_LEVEL_MENU_ROUTES) {
+            if (hasPreviousMenu) {
+                val target = menuHistory[menuHistory.lastIndex - 1]
+                menuHistory = menuHistory.dropLast(1)
+                tabSwitchSlides = false
+                navigateToTab(navController, target)
+            }
+        } else if (!navController.popBackStack() && hasPreviousMenu) {
+            val target = menuHistory[menuHistory.lastIndex - 1]
+            menuHistory = menuHistory.dropLast(1)
+            tabSwitchSlides = false
+            navigateToTab(navController, target)
+        }
+    }
     // The Add menu is only available from the Cellar and Notes tabs. It stays off every other
     // route, including the wine editor, note editors, Settings and Backup & Restore.
     val showAddMenu = currentRoute == "cellar" || currentRoute == "notes"
@@ -351,10 +459,14 @@ fun MainAppScaffold(
         }
     }
     val backupState by backupViewModel.state.collectAsState()
-    var isMenuExpanded by remember { mutableStateOf(false) }
     // Close an open Add submenu as soon as the user leaves Cellar or Notes.
     LaunchedEffect(currentRoute) {
         if (!showAddMenu) isMenuExpanded = false
+        if (currentRoute != "cellar") wineActionBarVisible = false
+    }
+    // The cellar wine action bar replaces the "+" menu while it is showing.
+    LaunchedEffect(wineActionBarVisible) {
+        if (wineActionBarVisible) isMenuExpanded = false
     }
 
     /** A JSON restore rewrites SharedPreferences; refresh the in-memory ViewModels immediately. */
@@ -367,7 +479,7 @@ fun MainAppScaffold(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             floatingActionButton = {
-                if (showAddMenu && currentRoute != "add_wine") {
+                if (showAddMenu && currentRoute != "add_wine" && !wineActionBarVisible) {
                     Surface(
                         onClick = {
                             if (currentRoute == "notes") {
@@ -417,14 +529,16 @@ fun MainAppScaffold(
                 NavigationBarItem(
                     modifier = Modifier.onSizeChanged { bottomBarItemWidthPx = it.width },
                     selected = currentRoute == "cellar" || currentRoute == "add_wine",
-                    onClick = { 
+                    onClick = {
                         Log.d("WineTracker", "BottomBar: Cellar clicked")
                         isMenuExpanded = false
                         if (currentRoute != "cellar") {
                             // Always land on the Cellar root: this covers the wine editor, an
                             // add/note editor reached from any tab, and every other tab.
+                            if (menuHistory.lastOrNull() != "cellar") menuHistory = menuHistory + "cellar"
+                            tabSwitchSlides = false
                             if (!navController.popBackStack("cellar", inclusive = false)) {
-                                navigateToTab(navController, "cellar")
+                                navigateToMenu("cellar")
                             }
                         }
                         viewModel.resetCellarScreen()
@@ -437,7 +551,7 @@ fun MainAppScaffold(
                     onClick = {
                         Log.d("WineTracker", "BottomBar: Notes clicked")
                         isMenuExpanded = false
-                        navigateToTab(navController, "notes")
+                        navigateToMenu("notes")
                     },
                     icon = { Icon(Icons.Default.Description, "Notes") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_NOTES, bottomBarLabelSize) }
@@ -447,27 +561,27 @@ fun MainAppScaffold(
                     onClick = {
                         Log.d("WineTracker", "BottomBar: History clicked")
                         isMenuExpanded = false
-                        navigateToTab(navController, "history")
+                        navigateToMenu("history")
                     },
                     icon = { Icon(Icons.Default.History, contentDescription = "Consumption History") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_HISTORY, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "rankings",
-                    onClick = { 
+                    onClick = {
                         Log.d("WineTracker", "BottomBar: Rankings clicked")
                         isMenuExpanded = false
-                        navigateToTab(navController, "rankings") 
+                        navigateToMenu("rankings")
                     },
                     icon = { Icon(Icons.Default.Star, "Rankings") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_RANKINGS, bottomBarLabelSize) }
                 )
                 NavigationBarItem(
                     selected = currentRoute == "profile" || currentRoute == "settings" || currentRoute == "app_info" || currentRoute == "pareto" || currentRoute == "backup_restore",
-                    onClick = { 
+                    onClick = {
                         Log.d("WineTracker", "BottomBar: Profile clicked")
                         isMenuExpanded = false
-                        navigateToTab(navController, "profile") 
+                        navigateToMenu("profile")
                     },
                     icon = { Icon(Icons.Default.Person, "Profile") },
                     label = { BottomBarLabel(BOTTOM_BAR_LABEL_PROFILE, bottomBarLabelSize) }
@@ -480,7 +594,49 @@ fun MainAppScaffold(
         NavHost(
             navController = navController,
             startDestination = "cellar",
-            modifier = Modifier.padding(padding).fillMaxSize()
+            modifier = Modifier.padding(padding).fillMaxSize().then(tabSwipeModifier),
+            // Swipe-initiated switches between main tabs slide the full
+            // width in the direction of travel, starting immediately —
+            // no fade, no delay — so the screen responds the moment a
+            // swipe registers. (A fade-first pattern felt like nothing
+            // happened, then the next screen popped in all at once.)
+            // Bottom-bar taps and all other routes just fade.
+            enterTransition = {
+                val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
+                val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
+                if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {
+                    slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) full else -full }
+                } else {
+                    fadeIn(animationSpec = tween(160))
+                }
+            },
+            exitTransition = {
+                val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
+                val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
+                if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {
+                    slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) -full else full }
+                } else {
+                    fadeOut(animationSpec = tween(120))
+                }
+            },
+            popEnterTransition = {
+                val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
+                val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
+                if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {
+                    slideInHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) full else -full }
+                } else {
+                    fadeIn(animationSpec = tween(160))
+                }
+            },
+            popExitTransition = {
+                val from = TOP_LEVEL_MENU_ORDER.indexOf(initialState.destination.route)
+                val to = TOP_LEVEL_MENU_ORDER.indexOf(targetState.destination.route)
+                if (tabSwitchSlides && from >= 0 && to >= 0 && from != to) {
+                    slideOutHorizontally(animationSpec = tween(240, easing = FastOutSlowInEasing)) { full -> if (to > from) -full else full }
+                } else {
+                    fadeOut(animationSpec = tween(120))
+                }
+            }
         ) {
             composable("cellar") {
                 CellarScreen(
@@ -492,13 +648,23 @@ fun MainAppScaffold(
                     },
                     onEditWine = { bottleId -> navController.navigate("wine_edit/$bottleId") },
                     onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") },
-                    onConsumed = ::showConsumptionUndo
+                    onTastingNotesClick = { definitionId, vintage ->
+                        tastingNoteViewModel.openWineTastingNotes(definitionId, vintage)
+                        navigateToMenu("notes")
+                    },
+                    onConsumed = ::showConsumptionUndo,
+                    onWineActionBarVisibleChange = { wineActionBarVisible = it }
                 )
             }
             composable("notes") {
                 TastingNotesScreen(
                     tastingNoteViewModel = tastingNoteViewModel,
-                    onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") }
+                    onNoteClick = { noteId -> navController.navigate("note_detail/$noteId") },
+                    onAddNote = { definitionId, vintage ->
+                        navController.navigate(
+                            "note_editor/create?definitionId=$definitionId&vintage=${Uri.encode(vintage)}"
+                        )
+                    }
                 )
             }
             composable("rankings") {
@@ -523,7 +689,7 @@ fun MainAppScaffold(
                     onParetoClick = { navController.navigate("pareto") }
                 ) {
                     refreshAfterRestore()
-                    navigateToTab(navController, "cellar")
+                    navigateToMenu("cellar")
                 }
             }
             composable("settings") {
@@ -537,7 +703,7 @@ fun MainAppScaffold(
                     onDatabaseLookupClick = { navController.navigate("database_lookup") }
                 ) {
                     refreshAfterRestore()
-                    navigateToTab(navController, "cellar")
+                    navigateToMenu("cellar")
                 }
             }
             composable("backup_restore") {
@@ -547,7 +713,7 @@ fun MainAppScaffold(
                     onBack = { navController.popBackStack() }
                 ) {
                     refreshAfterRestore()
-                    navigateToTab(navController, "cellar")
+                    navigateToMenu("cellar")
                 }
             }
             composable("database_lookup") {
@@ -659,7 +825,7 @@ fun MainAppScaffold(
 
     // Dimming Overlay
     AnimatedVisibility(
-        visible = isMenuExpanded && showAddMenu,
+        visible = isMenuExpanded && showAddMenu && !wineActionBarVisible,
         enter = fadeIn(),
         exit = fadeOut()
     ) {
@@ -683,7 +849,7 @@ fun MainAppScaffold(
 
     // Popup Menu
     AnimatedVisibility(
-        visible = isMenuExpanded && showAddMenu,
+        visible = isMenuExpanded && showAddMenu && !wineActionBarVisible,
         enter = slideInVertically(initialOffsetY = { 40 }) + fadeIn() + expandVertically(),
         exit = slideOutVertically(targetOffsetY = { 40 }) + fadeOut() + shrinkVertically(),
         modifier = Modifier.fillMaxSize()
@@ -843,6 +1009,33 @@ private fun StartupDbErrorScreen(detail: String, onRetry: () -> Unit) {
                 Text("Try again")
             }
         }
+    }
+}
+
+private val TOP_LEVEL_MENU_ROUTES = setOf("cellar", "notes", "history", "rankings", "profile")
+
+/** Bottom-bar order, for left/right swipe navigation between main screens. */
+private val PAGER_SWIPE_ROUTES = setOf("cellar", "history")
+
+private val TOP_LEVEL_MENU_ORDER = listOf("cellar", "notes", "history", "rankings", "profile")
+
+/**
+ * Edge-overflow gate for the main-tab swipe. Screens with an inner
+ * horizontal pager (Cellar's Bottles/Racks, History's two tabs) report
+ * here whether that pager can still move in each direction. The pager
+ * consumes horizontal drags even at its edge, so consumption alone
+ * cannot tell "pager is using this swipe" from "pager is at its edge
+ * and the swipe should spill over to the next/previous main screen".
+ * The values only describe whichever pager screen is currently shown;
+ * that screen resets them when it leaves composition.
+ */
+internal object InnerPagerSwipeGate {
+    var blocksSwipeToNext by mutableStateOf(false)
+    var blocksSwipeToPrevious by mutableStateOf(false)
+
+    fun reset() {
+        blocksSwipeToNext = false
+        blocksSwipeToPrevious = false
     }
 }
 

@@ -46,6 +46,8 @@ import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
+private const val BUNDLED_V1_BASELINE_ASSET="gliner-v1-baseline/results.json"
+
 internal data class GlinerLabRow(
     val index:Int,
     val sample:GlinerLabSample,
@@ -102,6 +104,14 @@ internal data class GlinerLabState(
     val exports:List<File> = emptyList(),
     val expanded:Set<String> = emptySet(),
     val modelsReady:Boolean=false,
+    /** Which pipeline produced the current corpus results: "GLiNER v1" (lab) or "GLiNER v2" (production copy). */
+    val runVariant:String="GLiNER v1",
+    /** Previous corpus run retained so v1 and v2 scoreboards can be compared side by side. */
+    val priorRunVariant:String="",
+    val priorAggregate:GlinerAggregate?=null,
+    val priorMeanTotalMs:Long=0,
+    /** Per-image rows of the prior run, retained so the scoreboard can rescore it on the photos the current run has finished (head-to-head). */
+    val priorSamples:List<GlinerLabRow> = emptyList(),
     /** Time to make the bundle files readable (asset copy or import check), in milliseconds. */
     val bundleMs:Long=0,
     /** Time to parse the tokenizer and create the ONNX session, in milliseconds. */
@@ -113,6 +123,33 @@ internal data class GlinerLabState(
 ) {
     val ran:Boolean get() = samples.any { it.result!=null }
     val customRan:Boolean get() = customSamples.any { it.result!=null }
+
+    /** Corpus photos the current run has scored so far. */
+    val completedImages:Set<String> get() =
+        samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet()
+
+    /**
+     * The prior run rescored on exactly the photos the current run has
+     * finished, so mid-run the scoreboard compares like with like
+     * instead of a partial current run against the prior's full corpus.
+     * Null when there is nothing to match yet (no prior rows retained,
+     * or the current run has not finished any photo the prior scored).
+     */
+    val priorMatchedAggregate:GlinerAggregate? get() {
+        if(priorSamples.isEmpty()) return null
+        val done=completedImages
+        if(done.isEmpty()) return null
+        val matched=priorSamples.filter { it.sample.image in done }
+        return if(matched.any { it.result!=null }) aggregateGlinerRows(matched,stopped=false) else null
+    }
+
+    /** Mean total ms of the prior run over the same matched photos. */
+    val priorMatchedMeanTotalMs:Long get() {
+        if(priorSamples.isEmpty()) return 0L
+        val done=completedImages
+        val times=priorSamples.filter { it.sample.image in done }.mapNotNull { it.result?.totalMs }
+        return if(times.isEmpty()) 0L else times.average().toLong()
+    }
     fun row(image:String):GlinerLabRow? = (samples+customSamples).firstOrNull { it.sample.image==image }
 }
 
@@ -221,6 +258,22 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 state.copy(samples=samples.mapIndexed { index,sample ->
                     known[sample.image]?.copy(index=index) ?: GlinerLabRow(index,sample)
                 },total=if(state.running) state.total else samples.size)
+            }
+            // Bake-in: with no run yet this session, seed the
+            // scoreboard from the bundled GLiNER v1 export so only
+            // GLiNER v2 needs to run for a comparison.
+            val seeded=mutable.value
+            if(seeded.samples.none { it.result!=null } && seeded.aggregate==null) {
+                bundledV1Baseline(seeded.samples)?.let { (rows,matched) ->
+                    if(matched>0) mutable.update { state ->
+                        if(state.samples.none { it.result!=null } && state.aggregate==null) {
+                            state.copy(samples=rows,
+                                aggregate=aggregateGlinerRows(rows,stopped=false),
+                                runVariant="GLiNER v1",
+                                message="Bundled GLiNER v1 baseline loaded ($matched/${rows.size} photos, rescored against current references). Run GLiNER v2 to compare.")
+                        } else state
+                    }
+                }
             }
         }
     }
@@ -338,6 +391,95 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                         (if(baseline!=null) "Previous predictions imported as a rescored baseline. " else "") +
                         "${refs.sumOf { it.warnings.size }} original review contradictions to check.")
             },onFailure={ error -> state.copy(importingImages=false,message="Audit import failed: ${error.message}") }) }
+        }
+    }
+
+    /**
+     * Rescore an exported GLiNER v1 run's predictions against the
+     * current references of [samples]. Returns the updated rows and
+     * the number of corpus photos matched by image id.
+     */
+    private fun rescoreV1Export(document:JSONObject,samples:List<GlinerLabRow>):Pair<List<GlinerLabRow>,Int> {
+        val images=document.optJSONArray("images") ?: throw IllegalArgumentException("Export has no images array")
+        val byImage=mutableMapOf<String,JSONObject>()
+        for(i in 0 until images.length()) {
+            val item=images.optJSONObject(i) ?: continue
+            byImage[item.optString("image")]=item
+        }
+        var matched=0
+        val updated=samples.map { row ->
+            val item=byImage[row.sample.image] ?: return@map row
+            matched++
+            val fieldsJson=item.optJSONObject("fields")
+            val fields=PhoneCorpusMath.fields.associateWith { f -> fieldsJson?.optString(f).orEmpty() }
+            val statesJson=item.optJSONObject("states")
+            val states=PhoneCorpusMath.fields.associateWith { f -> statesJson?.optString(f).orEmpty() }
+            val failed=item.optString("status")!="complete"
+            val outcomes=PhoneCorpusMath.fields.associateWith { f ->
+                PhoneCorpusMath.outcome(row.sample.target(f),fields[f].orEmpty(),failed)
+            }
+            val imported=GlinerLabImageResult(
+                image=row.sample.image,reviewNumber=row.sample.reviewNumber,
+                status=item.optString("status"),message=item.optString("message"),
+                ocrLines=item.optJSONArray("ocr_lines")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+                observations=emptyList(),
+                laneTexts=GlinerLane.ordered.associate { lane -> lane.key to (item.optJSONObject("lanes")?.optString(lane.key).orEmpty()) },
+                residualTexts=item.optJSONArray("residual")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+                fields=fields,fieldStates=states,
+                fieldResults=PhoneCorpusMath.fields.map { f ->
+                    com.yourapp.wine.gliner.GlinerFieldResult(f,GlinerLabRunner.fieldLabels.getValue(f),
+                        row.sample.target(f).display,fields[f].orEmpty(),states[f].orEmpty(),outcomes.getValue(f))
+                },
+                eligible=PhoneCorpusMath.eligible(PhoneCorpusMath.fields.associateWith { f -> row.sample.target(f) }),
+                errorCount=outcomes.values.count { o -> !PhoneCorpusMath.correct(o) },
+                wordCount=item.optInt("words"),spanCount=item.optInt("spans"),
+                layout=item.optString("layout"),outputShape=item.optString("output_shape"),
+                modelSignature=item.optString("model"),int4=item.optBoolean("int4",true),
+                ocrMs=item.optLong("ocr_ms"),glinerMs=item.optLong("gliner_ms"),
+                postMs=item.optLong("post_ms"),totalMs=item.optLong("total_ms"),
+                notes=item.optString("notes"),
+                baseFields=item.optJSONObject("base_fields")?.let { json ->
+                    PhoneCorpusMath.fields.associateWith { f -> json.optString(f) } } ?: emptyMap(),
+                baseOutcomes=item.optJSONObject("base_outcomes")?.let { json ->
+                    PhoneCorpusMath.fields.associateWith { f -> json.optString(f) } } ?: emptyMap(),
+                fieldDecisions=item.optJSONArray("gliner_decisions")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+            )
+            row.copy(status=imported.status,result=imported)
+        }
+        return updated to matched
+    }
+
+    /** Bundled GLiNER v1 results, loaded automatically when the corpus first appears. */
+    private fun bundledV1Baseline(samples:List<GlinerLabRow>):Pair<List<GlinerLabRow>,Int>? = runCatching {
+        val document=JSONObject(app.assets.open(BUNDLED_V1_BASELINE_ASSET).bufferedReader(Charsets.UTF_8).use { it.readText() })
+        require(document.optString("pipeline")=="gliner-lane-v1")
+        rescoreV1Export(document,samples)
+    }.getOrNull()
+
+    /**
+     * Import a previously exported GLiNER v1 corpus run ("Save JSON")
+     * as the saved v1 scoreboard state. Predictions are rescored
+     * against the current references; no model is run. Running
+     * GLiNER v2 afterwards retains these as the prior (v1) row.
+     */
+    fun importV1Results(uri:Uri) {
+        if(mutable.value.running || mutable.value.importingImages) return
+        if(mutable.value.samples.isEmpty()) { mutable.update { it.copy(message="The packaged dataset is still loading") }; return }
+        mutable.update { it.copy(importingImages=true,message="Importing GLiNER v1 results\u2026") }
+        session.scope.launch {
+            val result=runCatching {
+                val document=GlinerAuditStore.readDocument(app,uri)
+                require(document.optString("pipeline")=="gliner-lane-v1") { "Not a GLiNER lab export" }
+                val (samples,matched)=rescoreV1Export(document,mutable.value.samples)
+                Triple(samples,matched,document.optString("build") to document.optString("decision_policy"))
+            }
+            mutable.update { state -> result.fold(onSuccess={ (samples,matched,meta) ->
+                state.copy(samples=samples,importingImages=false,
+                    aggregate=aggregateGlinerRows(samples,stopped=false),
+                    runVariant="GLiNER v1",
+                    message="Imported GLiNER v1 results: $matched/${samples.size} corpus photos matched \u00b7 build ${meta.first} \u00b7 ${meta.second}. " +
+                        "Rescored against current references; no model was run. Now run GLiNER v2 to compare.")
+            },onFailure={ error -> state.copy(importingImages=false,message="V1 results import failed: ${error.message}") }) }
         }
     }
 
@@ -509,6 +651,8 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
     }
 
     fun runAll() = launchRun(only=null,custom=false)
+    /** GLiNER v2: the production scanner pipeline over the same corpus. */
+    fun runAllV2() = launchRun(only=null,custom=false,production=true)
     fun runSingle(image:String) = launchRun(only=image,custom=false)
     fun runCustomAll() = launchRun(only=null,custom=true)
     fun runCustomSingle(image:String) = launchRun(only=image,custom=true)
@@ -616,7 +760,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         }
     }
 
-    private fun launchRun(only:String?,custom:Boolean) {
+    private fun launchRun(only:String?,custom:Boolean,production:Boolean=false) {
         if(job?.isActive==true || mutable.value.importingImages) return
         val bundle=mutable.value.bundle
         if(!bundle.ready) {
@@ -628,8 +772,10 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             mutable.update { it.copy(message=if(custom) "Choose images first" else "The packaged dataset is still loading") }
             return
         }
-        val laneConfig=mutable.value.laneConfig
-        val modules=mutable.value.modules
+        // GLiNER v2 ignores lab tweaks: production uses the default
+        // lane configuration and the integrated production module set.
+        val laneConfig=if(production) GlinerLaneConfig() else mutable.value.laneConfig
+        val modules=if(production) LabPostOcrModules.none.withIntegrated() else mutable.value.modules
         val targets=source.filter { it.sample.included && (only==null || it.sample.image==only) }
         if(targets.isEmpty()) {
             mutable.update { it.copy(message="No selected images to run") }
@@ -638,6 +784,12 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         val targetImages=targets.map { it.sample.image }.toSet()
         mutable.update { state ->
             state.copy(running=true,runningCustom=custom,reviewPrompt=false,finished=false,stopped=false,done=0,total=targets.size,current="",
+                runVariant=if(custom) state.runVariant else if(production) "GLiNER v2" else "GLiNER v1",
+                priorRunVariant=if(custom || state.aggregate==null) state.priorRunVariant else state.runVariant,
+                priorAggregate=if(custom || state.aggregate==null) state.priorAggregate else state.aggregate,
+                priorMeanTotalMs=if(custom || state.aggregate==null) state.priorMeanTotalMs else
+                    state.samples.mapNotNull { it.result?.totalMs }.takeIf { it.isNotEmpty() }?.average()?.toLong() ?: 0L,
+                priorSamples=if(custom || state.aggregate==null) state.priorSamples else state.samples,
                 aggregate=if(custom) state.aggregate else null,message="",
                 runStartedMs=SystemClock.elapsedRealtime(),firstResultMs=0,runElapsedMs=0,
                 samples=if(custom) state.samples else state.samples.map { row ->
@@ -668,13 +820,24 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 mutable.update { it.copy(tokenizer=opened.tokenizerDescription,modelMs=modelMs,bundleMs=bundleMs) }
                 val warmSession=TextLabWineExtraction.WarmSession(app)
                 warm=warmSession
+                if(production) {
+                    // Mirror the production warm-up: extractor/hybrid/
+                    // repair exist and the extractor's lazy indexes are
+                    // built before the first photo, not inside it.
+                    val kb=warmSession.knowledgeBase()
+                    val extractor=warmSession.evidenceExtractor(kb,true,true,modules)
+                    runCatching { extractor.warmUp() }
+                    warmSession.anchorHybrid(kb)
+                    warmSession.producerRepair(kb)
+                }
                 targets.forEachIndexed { index,row ->
                     currentCoroutineContext().ensureActive()
                     mutable.update { it.copy(current=row.displayName) }
                     GlinerLabRunService.update(app,"${index}/${targets.size} · ${row.displayName}")
                     setStatus(row.sample.image,"Running")
                     val result=try {
-                        GlinerLabRunner.run(app,row.sample,opened,laneConfig,warmSession,workFolder,modules)
+                        if(production) GlinerLabRunner.runProductionVariant(app,row.sample,opened,warmSession,workFolder)
+                        else GlinerLabRunner.run(app,row.sample,opened,laneConfig,warmSession,workFolder,modules)
                     } catch(cancel:CancellationException) {
                         setStatus(row.sample.image,"Stopped")
                         throw cancel
@@ -789,6 +952,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
             }
             val payload=JSONObject().apply {
                 put("pipeline","gliner-lane-v1")
+                put("gliner_variant",snapshot.runVariant)
                 put("decision_policy",GlinerFieldDecisionPolicy.VERSION)
                 put("build",BuildConfig.BUILD_COMMIT)
                 put("branch",BuildConfig.BUILD_BRANCH)

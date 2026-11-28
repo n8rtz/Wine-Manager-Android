@@ -98,7 +98,9 @@ internal object TextLabSpatialPreview {
         labModules:com.yourapp.wine.textlab.evidence.LabPostOcrModules=com.yourapp.wine.textlab.evidence.LabPostOcrModules.unitTestDefault,
         // GLiNER lane lab: grouped lane observations replace the raw per-line readings as this
         // contender's input. Null keeps every existing caller byte-identical.
-        recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null) {
+        recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,
+        evidenceBudgetMs:Long=com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS,
+        repairBudgetMs:Long=60_000L) {
         val summaryStage=stagePrefix+"evidence_summary"
         if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
@@ -134,6 +136,12 @@ internal object TextLabSpatialPreview {
                     "source_rectified_boxes" to proposal.sources.joinToString(";") { it.bboxRect.toString() },
                     "source_original_boxes" to proposal.sources.joinToString(";") { it.bboxOrig.toString() }))
             }
+            // One shared gazetteer for every producer-completion
+            // appellation check below: a fresh PlaceGazetteer per
+            // candidate rebuilds the entire place trie on each call.
+            val completionGazetteer=engine?.let { e ->
+                com.yourapp.wine.kb.PlaceGazetteer(com.yourapp.wine.kb.SupplementedWineKnowledgeBase(e.baseKb))
+            }
             // Preserve originals. Spatial joins are competing producer lookup spans, never replacement observations.
             val readings=original
             val work=TextLabJournal(journal.selected,journal.build,journal.detectLines)
@@ -153,14 +161,14 @@ internal object TextLabSpatialPreview {
             val allowHybridVintage=if(isLabSpatial) labModules.vintageRecovery else true
             val evidenceResult=if(isLabSpatial && producerIndex!=null && engine!=null) {
                 engine.withDeferredBlankSubregionFallback {
-                    TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
+                    TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,budgetMs=evidenceBudgetMs,repairBudgetMs=repairBudgetMs,
                         useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                         exactGeographyFastPath=true,allowHybridVintageFallback=allowHybridVintage,
                         appellationFallbackEngines=if(labModules.appellationWineFallback) 1 else 0,
                         deepestAppellationFallback=labModules.deepestAppellationFallback,styleAppellationWine=labModules.styleAppellationWine,producerAnchorFallback=labModules.producerAnchorFallback,geographyAppellationWine=labModules.geographyAppellationWine)
                 }
             } else {
-                TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,
+                TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,budgetMs=evidenceBudgetMs,repairBudgetMs=repairBudgetMs,
                     useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                     exactGeographyFastPath=policy.minimumIndependentEngines<2,
                     allowHybridVintageFallback=allowHybridVintage,
@@ -425,9 +433,7 @@ internal object TextLabSpatialPreview {
                                         } &&
                                         !completionBoilerplate.containsMatchIn(TextNorm.normalize(candidate)) &&
                                         !com.yourapp.wine.extract.WineDesignations.isAppellationName(candidate) &&
-                                        engine?.let { e -> com.yourapp.wine.kb.PlaceGazetteer(
-                                            com.yourapp.wine.kb.SupplementedWineKnowledgeBase(e.baseKb))
-                                            .matches(TextNorm.normalize(candidate)).isEmpty() }==true &&
+                                        (completionGazetteer?.matches(TextNorm.normalize(candidate))?.isEmpty() ?: false) &&
                                         true
                                 }.distinctBy { TextNorm.normalize(it) }
                                 if(completions.size==1) {
@@ -478,9 +484,7 @@ internal object TextLabSpatialPreview {
                                             } &&
                                             !prefixBoilerplate.containsMatchIn(TextNorm.normalize(candidate)) &&
                                             !com.yourapp.wine.extract.WineDesignations.isAppellationName(candidate) &&
-                                            com.yourapp.wine.kb.PlaceGazetteer(
-                                                com.yourapp.wine.kb.SupplementedWineKnowledgeBase(engine.baseKb))
-                                                .matches(TextNorm.normalize(candidate)).isEmpty()
+                                            (completionGazetteer?.matches(TextNorm.normalize(candidate))?.isEmpty() ?: true)
                                     }
                                 fun tokensOf(value:String)=TextNorm.normalize(value)
                                     .split(Regex("\\s+")).filter(String::isNotBlank)

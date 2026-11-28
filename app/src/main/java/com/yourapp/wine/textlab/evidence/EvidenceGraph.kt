@@ -47,9 +47,14 @@ internal object EvidenceGraphBuilder {
         }
         val phrases=mutableListOf<Phrase>()
         var truncated=records.size>MAX_OBSERVATIONS
+        // Membership index for the exact same (observation ids,
+        // normalized text) de-duplication the list scan below used to
+        // do in O(phrases) with a re-normalization per entry. Pure
+        // bookkeeping: the phrases produced are identical.
+        val seenPhrases=mutableSetOf<Pair<Set<Int>,String>>()
         fun add(text:String,ids:Set<Int>,box:RectF,why:String) {
             if(phrases.size>=MAX_PHRASES) { truncated=true;return }
-            if(text.length<=256 && phrases.none { it.observations==ids && TextNorm.normalize(it.text)==TextNorm.normalize(text) })
+            if(text.length<=256 && seenPhrases.add(ids to TextNorm.normalize(text)))
                 phrases+=Phrase(phrases.size,text,ids,RectF(box),why)
         }
         observations.forEach { add(it.record.textRaw,setOf(it.id),it.record.bboxRect,"observed") }
@@ -69,6 +74,13 @@ internal object EvidenceGraphBuilder {
             val aPass=passFor(a.observations) ?: return false
             return aPass==passFor(b.observations)
         }
+        // Per-single precomputations for the pair loop below: the loop
+        // used to re-normalize both texts and re-derive both engine
+        // passes for every ordered pair. All pure functions of the
+        // single, so the loop's decisions are unchanged.
+        val singleNorm=singles.map { TextNorm.normalize(it.text) }
+        val singleCompact=singleNorm.map { norm -> norm.filter(Char::isLetterOrDigit) }
+        val singlePass=singles.map { passFor(it.observations) }
         val geographyCache=mutableMapOf<String,Boolean>()
         val producerCache=mutableMapOf<String,Boolean>()
         fun isGeographyLine(text:String):Boolean {
@@ -196,11 +208,12 @@ internal object EvidenceGraphBuilder {
                     BoxMath.union(listOf(a,b)),"split crest vintage")
             }
         }
-        for(a in singles) for(b in singles) {
+        for((ai,a) in singles.withIndex()) for((bi,b) in singles.withIndex()) {
             checkBudget()
             if(a.observations.intersect(b.observations).isNotEmpty()) continue
-            if(enforceSpatialSemanticGuards && !sameEnginePass(a,b)) continue
-            val ak=TextNorm.normalize(a.text).filter(Char::isLetterOrDigit);val bk=TextNorm.normalize(b.text).filter(Char::isLetterOrDigit)
+            val samePass=singlePass[ai]!=null && singlePass[ai]==singlePass[bi]
+            if(enforceSpatialSemanticGuards && !samePass) continue
+            val ak=singleCompact[ai];val bk=singleCompact[bi]
             if(ak==bk || (BoxMath.iou(a.box,b.box)>.25f && TextNorm.editDistance(ak,bk,2)!=null)) continue
             val horizontal=a.box.centerX()<b.box.centerX() && BoxMath.verticalOverlap(a.box,b.box) >= .55f &&
                 b.box.left >= a.box.left && b.box.left-a.box.right<=.06f &&
@@ -224,12 +237,12 @@ internal object EvidenceGraphBuilder {
             // the varietal (SIGNATURE SERIES over CABERNET SAUVIGNON); allow an
             // absolute-gap vertical solely for bounded pair evaluation.
             val pairVertical=vertical || pairLooseVertical
-            val pairCandidate=pairVertical && sameEnginePass(a,b) &&
+            val pairCandidate=pairVertical && samePass &&
                 maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())<=wineTitlePairMaxHeightRatio &&
                 isBoundedWineTitlePair(a.text,b.text)
             // Item 4c: a vertically stacked producer span (estate heading or
             // particle line over a name line) is likewise its own role support.
-            val producerSpanCandidate=allowProducerSpans && vertical && sameEnginePass(a,b) &&
+            val producerSpanCandidate=allowProducerSpans && vertical && samePass &&
                 maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())<=1.85f &&
                 !isHardBoundary(a.text) && !isHardBoundary(b.text) &&
                 !isGeographyLine(a.text) && !isGeographyLine(b.text) &&
@@ -237,13 +250,13 @@ internal object EvidenceGraphBuilder {
                 b.text.count(Char::isLetter)>=3 && !b.text.any(Char::isDigit) &&
                 (lineRoles.hasProducerCue(a.text) || EvidenceIdentityRoles.headingOnly(a.text) ||
                     EvidenceIdentityRoles.namedEstate(a.text) ||
-                    Regex("\\b(de|du|di|des|la|le|les)$").containsMatchIn(TextNorm.normalize(a.text)) ||
-                    Regex("^(de|du|di|des|d|la|le|les)\\b").containsMatchIn(TextNorm.normalize(b.text)))
+                    Regex("\\b(de|du|di|des|la|le|les)$").containsMatchIn(singleNorm[ai]) ||
+                    Regex("^(de|du|di|des|d|la|le|les)\\b").containsMatchIn(singleNorm[bi]))
             if(requireRoleAwareJoins && !pairCandidate && !producerSpanCandidate && !compatibleRoles(a.text,b.text)) continue
             if(filterAdministrative && (com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(a.text) ||
                 com.yourapp.wine.extract.LabelTextRoles.isAdministrativeIdentity(b.text))) continue
             val heightRatio=maxOf(a.box.height(),b.box.height())/minOf(a.box.height(),b.box.height())
-            val stackedAppellation=allowStackedAppellations && vertical && sameEnginePass(a,b) &&
+            val stackedAppellation=allowStackedAppellations && vertical && samePass &&
                 heightRatio<=1.85f && !isHardBoundary(a.text) && !isHardBoundary(b.text) &&
                 (WineDesignations.isAppellationName(combinedText) || WineDesignations.classificationBase(combinedText)!=null)
             // Item 1a: a bounded wine-title pair is evaluated before the generic
@@ -265,7 +278,7 @@ internal object EvidenceGraphBuilder {
                     if(!stackedAppellation && !boundedPairCandidate && (isGeographyLine(a.text) || isGeographyLine(b.text) || isGeographyLine(combinedText))) continue
                 }
             }
-            val an=TextNorm.normalize(a.text);val bn=TextNorm.normalize(b.text)
+            val an=singleNorm[ai];val bn=singleNorm[bi]
             // Contained overlapping readings remain alternatives, not concatenations (LA / LA RESERVE).
             if(BoxMath.iou(a.box,b.box)>.10f && (" $an ".contains(" $bn ") || " $bn ".contains(" $an "))) continue
             val designation=WineDesignations.isDesignation(b.text) && !WineDesignations.isDesignation(a.text)

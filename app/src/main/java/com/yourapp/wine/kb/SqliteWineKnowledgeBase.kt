@@ -15,6 +15,15 @@ import kotlin.concurrent.withLock
 class SqliteWineKnowledgeBase private constructor(private val connection: SQLiteConnection, private val otherAssetBytes: Long, private val importDirectory: File) : WineKnowledgeBase, OpenWinesImporter, AutoCloseable {
     private val lock = ReentrantLock()
     private var closed = false
+    // Memoized producer lookups. Post-OCR stages ask the same questions
+    // many times (both OCR engines report near-identical lines, and the
+    // fill/evidence/repair stages re-query the same phrases); each answer
+    // costs an FTS query plus a per-hit alias query plus a Levenshtein
+    // rerank. Results are immutable within a KB instance, so caching is
+    // behaviour-identical. Only touched under [lock] (via access/import);
+    // cleared whenever the KB is mutated by an import.
+    private val producerHitCache = HashMap<String, List<ProducerHit>>()
+    private val aliasCache = HashMap<Long, List<String>>()
     @Volatile private var gazetteer: List<Place> = emptyList()
 
     /** No coordinates: returns the cached local hierarchy; never does network I/O. */
@@ -22,6 +31,7 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
 
     /** No coordinates: real FTS5 top-25 shortlist followed by bounded Levenshtein reranking. */
     override fun findProducer(text: String): List<ProducerHit> = access {
+        producerHitCache["p:$text"]?.let { return@access it }
         val words = Regex("[\\p{L}\\p{N}]{3,}").findAll(TextNorm.normalize(text))
             .map { it.value.take(4) }.distinct().take(8).toList()
         if (words.isEmpty()) return@access emptyList()
@@ -32,10 +42,14 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
             while (statement.step()) producers += Producer(statement.getLong(0), TextNorm.scrub(statement.getText(1)),
                 statement.getText(2), if (statement.isNull(3)) null else statement.getLong(3))
         }
-        KbMatching.rank(text, producers.map { it.copy(aliases = aliases(it.id)) })
+        val hits = KbMatching.rank(text, producers.map { it.copy(aliases = aliases(it.id)) })
+        if (producerHitCache.size > 1024) producerHitCache.clear()
+        producerHitCache["p:$text"] = hits
+        hits
     }
 
     override fun findProducerFuzzy(text:String):List<ProducerHit> = access {
+        producerHitCache["f:$text"]?.let { return@access it }
         val words=KbMatching.fuzzyPrefixes(text)
         if(words.isEmpty()) return@access emptyList()
         val query=words.joinToString(" OR ") { "\"$it\"*" }
@@ -45,7 +59,10 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
             while(statement.step()) producers+=Producer(statement.getLong(0),TextNorm.scrub(statement.getText(1)),statement.getText(2),
                 if(statement.isNull(3)) null else statement.getLong(3))
         }
-        KbMatching.rank(text,producers.map { it.copy(aliases=aliases(it.id)) })
+        val hits=KbMatching.rank(text,producers.map { it.copy(aliases=aliases(it.id)) })
+        if (producerHitCache.size > 1024) producerHitCache.clear()
+        producerHitCache["f:$text"] = hits
+        hits
     }
 
     /** Exhaustive local-catalog lookup for the Settings diagnostic; always returns the closest entries, not corrections. */
@@ -118,6 +135,8 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
         SqliteImportStaging.read(importDirectory, csvOrJson).use { staged ->
             lock.withLock {
                 check(!closed) { "Wine KB is closed" }
+                producerHitCache.clear()
+                aliasCache.clear()
                 connection.prepare("ATTACH DATABASE ? AS incoming").use { statement ->
                     statement.bindText(1, staged.file.absolutePath); statement.step()
                 }
@@ -155,11 +174,14 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
     }
 
     private fun aliases(id: Long): List<String> {
+        aliasCache[id]?.let { return it }
         val result = mutableListOf<String>()
         connection.prepare("SELECT alias_norm FROM producer_alias WHERE producer_id=?").use { s ->
             s.bindLong(1, id)
             while (s.step()) result += s.getText(0)
         }
+        if (aliasCache.size > 4096) aliasCache.clear()
+        aliasCache[id] = result
         return result
     }
 
@@ -252,7 +274,7 @@ class SqliteWineKnowledgeBase private constructor(private val connection: SQLite
                 db.exec("PRAGMA foreign_keys=ON")
                 db.exec("PRAGMA journal_mode=DELETE")
                 db.exec("PRAGMA busy_timeout=30")
-                db.exec("PRAGMA cache_size=-2048")
+                db.exec("PRAGMA cache_size=-8192")
                 val version = db.connection.prepare("PRAGMA user_version").use { it.step(); it.getLong(0) }
                 if (version == 0L) db.transaction {
                     db.exec("CREATE TABLE place(id INTEGER PRIMARY KEY,name TEXT NOT NULL,name_norm TEXT NOT NULL,type TEXT NOT NULL CHECK(type IN ('country','region','subregion','appellation')),parent_id INTEGER REFERENCES place(id) DEFERRABLE INITIALLY DEFERRED,country_code TEXT NOT NULL)")

@@ -60,10 +60,16 @@ internal object GlinerProductionScanner {
             if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext unavailable("model setup exceeded scan budget",started,source)
             onStage(LabelScanProgressStep.LOAD_READER)
             val laneConfig=GlinerLaneConfig()
-            val opened=GlinerOnnxModel.open(context,status,laneConfig)
+            // First-scan warm-up (GlinerScanWarmup) may have pre-opened
+            // the ONNX session and the KB/gazetteer session while the
+            // user was framing the photo; consume those when present so
+            // the post-shutter path starts hot. Single-use either way.
+            val opened=GlinerScanWarmup.takeModel(status) ?: GlinerOnnxModel.open(context,status,laneConfig)
             model=opened
             val readyMs=SystemClock.elapsedRealtime()
-            val session=TextLabWineExtraction.WarmSession(context)
+            val warmStart=SystemClock.elapsedRealtime()
+            val session=GlinerScanWarmup.takeWarmSession() ?: TextLabWineExtraction.WarmSession(context)
+            val warmPickupMs=SystemClock.elapsedRealtime()-warmStart
             warm=session
             val result=GlinerLabRunner.runProduction(context,photo,opened,session,deadlineAtMs,onStage)
             if(result.status!="complete") return@withContext unavailable("GLiNER workflow: ${result.status} ${oneLine(result.message)}",started,source)
@@ -71,18 +77,23 @@ internal object GlinerProductionScanner {
             if(SystemClock.elapsedRealtime()>=deadlineAtMs) return@withContext unavailable("scan budget reached",started,source)
             val elapsed=SystemClock.elapsedRealtime()-started
             val tokens=result.rawReadings
+            val adapterStart=SystemClock.elapsedRealtime()
+            val adapted=GlinerProductionAdapter.fill(result.fields,result.fieldStates,result.fieldDecisions)
+            val adapterMs=SystemClock.elapsedRealtime()-adapterStart
             val diagnostics=ScanDiagnostics(source=source,pipeline="gliner",budgetMs=budgetMs,inputBytes=photo.length(),
                 workW=result.workingWidth,workH=result.workingHeight,kbImplementation="Lab v7 expanded + ${GlinerFieldDecisionPolicy.VERSION}",
-                quadSource="full_photo_gliner",lastStage=ScanStage.FILL,
+                quadSource=if(result.croppedToTextRegion) "text_region_crop" else "full_photo_gliner",lastStage=ScanStage.FILL,
+                detailStages=result.detailStages,
                 stages=listOf(ScanStageTiming(ScanStage.INITIALIZE,(readyMs-started).coerceAtLeast(0)),
+                    ScanStageTiming(ScanStage.WARM_SESSION,warmPickupMs),
                     ScanStageTiming(ScanStage.OCR,result.ocrMs),ScanStageTiming(ScanStage.GLINER,result.glinerMs),
-                    ScanStageTiming(ScanStage.FILL,result.postMs)),
+                    ScanStageTiming(ScanStage.FILL,result.postMs),ScanStageTiming(ScanStage.FIELD_ADAPTER,adapterMs)),
                 engines=result.engineReadings.map { (id,count) -> ScanEngineStatus(id,count>0,
                     if(count>0) "$count readings" else "No readings; engine may have failed or found no text") } +
                     ScanEngineStatus("gliner-small-int4",true,opened.signature),
                 reads=tokens.take(80).map { ScanReadSample(it.textRaw,it.score,it.scoreIsEstimated,it.engineId,it.variantId,"FULL_PHOTO",true) },
                 totalReadings=tokens.size,mappingReceived=tokens.size)
-            val fill=GlinerProductionAdapter.fill(result.fields,result.fieldStates,result.fieldDecisions).let { base ->
+            val fill=adapted.let { base ->
                 // A missing OCR reading is not evidence of agreement. Keep uncertain values
                 // reviewable, without exposing the implementation as a separate scan experience.
                 if(result.engineReadings.values.any { it==0 }) base.copy(fields=base.fields.mapValues { (_,candidate) ->

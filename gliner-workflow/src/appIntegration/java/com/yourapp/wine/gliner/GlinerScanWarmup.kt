@@ -1,0 +1,181 @@
+package com.yourapp.wine.gliner
+
+import android.content.Context
+import android.util.Log
+import com.yourapp.wine.capture.WineScannerServices
+import com.yourapp.wine.gazetteer.ProducerGazetteer
+import com.yourapp.wine.textlab.PaddleCandidates
+import com.yourapp.wine.textlab.PaddleTextDetector
+import com.yourapp.wine.textlab.PaddleTextRecognizer
+import com.yourapp.wine.textlab.TextLabWineExtraction
+import com.yourapp.wine.textlab.evidence.LabPostOcrModules
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+
+/**
+ * First-scan warm-up. Most users scan once per app session, so keeping the
+ * scanner warm *between* scans buys nothing; instead the expensive cold
+ * work — bundle install/verify, ONNX session creation, knowledge-base and
+ * expanded-gazetteer opens — runs while the user is still framing the
+ * photo on the Add Wine screen, and the scan consumes the prepared pieces.
+ *
+ * Prepared pieces are single-use: [takeModel]/[takeWarmSession] hand them
+ * to one scan, which closes them exactly as if it had opened them itself.
+ * Anything never consumed simply stays ready for the next scan; [discard]
+ * releases it early (e.g. a cancelled capture). Preparation failures are
+ * swallowed — the scan then opens everything itself, as before.
+ */
+internal object GlinerScanWarmup {
+    private const val TAG = "WineTracker"
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private class PreparedModel(val model: GlinerOnnxModel, val bytes: Long, val modified: Long)
+
+    private var modelJob: Deferred<PreparedModel?>? = null
+    private var warmJob: Deferred<TextLabWineExtraction.WarmSession?>? = null
+    private var prepJob: Deferred<Unit>? = null
+
+    /** Idempotent: safe to call on every Add Wine open, capture and import. */
+    @Synchronized
+    fun begin(context: Context) {
+        val app = context.applicationContext
+        if (modelJob == null) modelJob = scope.async { prepareModel(app) }
+        if (warmJob == null) {
+            val sessionJob = scope.async { prepareWarmSession(app) }
+            warmJob = sessionJob
+            // Extractor/hybrid/repair pre-builds continue in the
+            // background: the scan picks up the session as soon as its
+            // KB+gazetteer core is ready instead of waiting for these.
+            prepJob = scope.async {
+                val session = runCatching { sessionJob.await() }.getOrNull() ?: return@async
+                runCatching { prebuildPostProcessors(session) }
+            }
+        }
+        // The GLiNER OCR path also awaits the app-scoped legacy services
+        // for its scan lock; start that initialization now too so it
+        // overlaps framing instead of preceding OCR.
+        scope.launch { runCatching { WineScannerServices.get(app) } }
+        // OCR engine warm-up: ML Kit model load and both PP-OCRv6 ONNX
+        // session creations (detector 62 MB, recognizer 76 MB plus its
+        // dictionary) otherwise land inside the scan's OCR stage.
+        scope.launch {
+            runCatching { GlinerOcr.warmMlKit() }
+            val gate = WineScannerServices.nativeGate
+            val spec = PaddleCandidates.all.first()
+            runCatching { PaddleTextDetector.warm(app, gate, spec) }
+            runCatching { PaddleTextRecognizer.warm(app, gate, spec) }
+        }
+    }
+
+    private suspend fun prepareModel(app: Context): PreparedModel? = try {
+        val status = GlinerBundle.status(app)
+        val file = status.model
+        if (!status.ready || !status.int4 || status.config == null || file == null) {
+            Log.d(TAG, "GlinerScanWarmup: bundle not ready, skipping model pre-open")
+            null
+        } else {
+            val opened = GlinerOnnxModel.open(app, status, GlinerLaneConfig())
+            Log.d(TAG, "GlinerScanWarmup: ONNX session pre-opened")
+            PreparedModel(opened, file.length(), file.lastModified())
+        }
+    } catch (cancel: CancellationException) {
+        throw cancel
+    } catch (error: Exception) {
+        Log.d(TAG, "GlinerScanWarmup: model pre-open failed (${error.javaClass.simpleName}); scan will open it")
+        null
+    }
+
+    /** Core session: KB, fill engine and expanded gazetteer — what a scan awaits. */
+    private fun prepareWarmSession(app: Context): TextLabWineExtraction.WarmSession? {
+        val session = TextLabWineExtraction.WarmSession(app)
+        return try {
+            val kb = session.knowledgeBase()
+            session.fillEngine(kb)
+            if (session.cachedGazetteer(true) == null) {
+                session.cacheGazetteer(true, ProducerGazetteer.openExpanded(app), emptyMap())
+            }
+            Log.d(TAG, "GlinerScanWarmup: KB + expanded gazetteer pre-opened")
+            session
+        } catch (cancel: CancellationException) {
+            runCatching { session.close() }
+            throw cancel
+        } catch (error: Exception) {
+            runCatching { session.close() }
+            Log.d(TAG, "GlinerScanWarmup: warm session failed (${error.javaClass.simpleName}); scan will open its own")
+            null
+        }
+    }
+
+    /**
+     * Background-only: pre-build the evidence extractor (place-hierarchy
+     * snapshot and catalog indexes), anchor hybrid and producer repair
+     * with the same arguments the post-process passes, so the warm
+     * session's cache hands back these very instances. Never awaited by
+     * a scan; if it loses the race, the post-process builds them itself.
+     */
+    private fun prebuildPostProcessors(session: TextLabWineExtraction.WarmSession) {
+        val kb = session.knowledgeBase()
+        val extractor = session.evidenceExtractor(kb, true, true, LabPostOcrModules.none.withIntegrated())
+        // Pay the extractor's lazy first-use builds (gazetteer trie,
+        // catalog key sets) now, in the background, not inside the
+        // first scan's evidence stage.
+        runCatching { extractor.warmUp() }
+        session.anchorHybrid(kb)
+        session.producerRepair(kb)
+        Log.d(TAG, "GlinerScanWarmup: post-processors pre-built")
+    }
+
+    /**
+     * The pre-opened ONNX session, if one is ready (or finishes in time for
+     * the caller to simply await it) and still matches the bundle file the
+     * caller just verified. Consumes the prepared model.
+     */
+    suspend fun takeModel(status: GlinerBundleStatus): GlinerOnnxModel? {
+        val job = synchronized(this) { modelJob.also { modelJob = null } } ?: return null
+        val prepared = try {
+            job.await()
+        } catch (cancel: CancellationException) {
+            throw cancel
+        } catch (error: Exception) {
+            null
+        } ?: return null
+        val file = status.model
+        if (file == null || file.length() != prepared.bytes || file.lastModified() != prepared.modified) {
+            // Bundle changed since pre-open (e.g. lab import): never scan
+            // with a session built on a stale file.
+            runCatching { prepared.model.close() }
+            return null
+        }
+        return prepared.model
+    }
+
+    /** The pre-opened KB/gazetteer session, if ready. Consumes it. */
+    suspend fun takeWarmSession(): TextLabWineExtraction.WarmSession? {
+        val job = synchronized(this) { warmJob.also { warmJob = null } } ?: return null
+        return try {
+            job.await()
+        } catch (cancel: CancellationException) {
+            throw cancel
+        } catch (error: Exception) {
+            null
+        }
+    }
+
+    /** Releases anything prepared but unconsumed (cancelled capture). */
+    fun discard() {
+        val models = synchronized(this) { modelJob.also { modelJob = null } }
+        val sessions = synchronized(this) { warmJob.also { warmJob = null } }
+        val prep = synchronized(this) { prepJob.also { prepJob = null } }
+        prep?.cancel()
+        if (models == null && sessions == null) return
+        scope.launch {
+            models?.let { job -> runCatching { job.await()?.model?.close() } }
+            sessions?.let { job -> runCatching { job.await()?.close() } }
+        }
+    }
+}

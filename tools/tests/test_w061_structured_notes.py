@@ -191,7 +191,8 @@ class W061SourceContractTests(unittest.TestCase):
         self.assertIn("modifier = Modifier.weight(1f)", aroma_row)
         self.assertIn("modifier = Modifier.fillMaxWidth()", aroma_row)
         self.assertIn("Arrangement.spacedBy(8.dp)", aroma_row)
-        self.assertNotIn("Arrangement.spacedBy(4.dp)", aroma_row)
+        # Phase groups inside the card use tight 4dp spacing.
+        self.assertIn("Arrangement.spacedBy(4.dp)", aroma_row)
         self.assertLess(aroma_row.index("NoteColorField("), aroma_row.index("AromaWheelLauncherHeader("))
         self.assertLess(aroma_row.index("AromaWheelLauncherHeader("), aroma_row.index("AromaWheelSummaryPanel("))
         self.assertIn(".drawBehind {", aroma_row)
@@ -222,7 +223,8 @@ class W061SourceContractTests(unittest.TestCase):
         editor = read(UI / "screens/TastingNoteEditorScreen.kt")
         sections = read(UI / "components/TastingPhaseSections.kt")
         self.assertIn("SectionedSensoryFields(", editor)
-        self.assertIn("CommonFaultsFields(", editor)
+        self.assertNotIn("CommonFaultsFields(", editor)
+        self.assertIn("CommonFaultsFields(", sections)
         self.assertIn("PhaseAromaWheelDialog(", editor)
         self.assertIn("LegacyAromaPhaseSheet(", editor)
         self.assertIn("withDerivedAromas(", editor)
@@ -242,15 +244,16 @@ class W061SourceContractTests(unittest.TestCase):
         sections = read(UI / "components/TastingPhaseSections.kt")
         legacy = read(UI / "components/LegacyAromaPhaseSheet.kt")
         self.assertIn("fun PhaseAromaWheelDialog(", wheel)
-        self.assertIn("TastingPhase.values().forEach", wheel)
+        # The wheel no longer switches phases: it edits all aromas at once.
+        self.assertIn("TastingPhase.UNCATEGORIZED", wheel)
         launcher = wheel.split("fun AromaWheelLauncherHeader(", 1)[1].split("/** Drag positions", 1)[0]
         self.assertIn("AromaWheelGlyph(", launcher)
         self.assertIn("AromaSummaryChipRow(", launcher)
         self.assertNotIn("ReorderableAromaChipRow(", launcher)
-        self.assertIn("toggleAromaObservation(", wheel)
+        self.assertIn("addAromaObservation(", wheel)
         self.assertIn("fun PhaseAromaCloud(", cloud)
         self.assertIn("FlowRow(", cloud)
-        self.assertIn("detectTransformGestures", cloud)
+        self.assertIn("calculateZoom()", cloud)
         self.assertIn("sortAromaObservationsByIntensity", cloud)
         self.assertNotIn('Text("%.1f".format', cloud)
         self.assertNotIn('"${info.label} %.1f"', sections)
@@ -347,3 +350,12 @@ class W061SourceContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SliderGroupSeparationTests(unittest.TestCase):
+    def test_no_extra_divider_and_overall_score_is_lined_header(self):
+        sections = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/TastingPhaseSections.kt").read_text()
+        self.assertNotIn("HorizontalDivider", sections)
+        fields = (ROOT / "app/src/main/java/com/n8rtz/winetracker/ui/components/SensoryEvaluationFields.kt").read_text()
+        self.assertIn('SectionHeaderLine("Overall Score")', fields)
+        self.assertNotIn('"Overall score",\n                    style = MaterialTheme.typography.titleSmall', fields)

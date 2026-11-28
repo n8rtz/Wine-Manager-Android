@@ -8,16 +8,36 @@ import com.n8rtz.winetracker.data.repository.WineRepository
 import androidx.lifecycle.viewModelScope
 import com.n8rtz.winetracker.data.local.BottleStatus
 import com.n8rtz.winetracker.data.local.TastingNote
+import com.n8rtz.winetracker.data.local.SensoryData
+import com.n8rtz.winetracker.data.local.TastingPhase
 import com.n8rtz.winetracker.data.local.displayVintage
+import com.n8rtz.winetracker.data.local.setAromaIntensity
 import com.n8rtz.winetracker.ui.screens.TastingNotesFilterState
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import android.util.Log
 import java.util.Locale
 
 // Exposes tasting-note, wine-vintage, and reviewer-setting state while delegating note
 // persistence to the shared repository provided by MainActivity.
+data class WineTastingNotesRequest(val definitionId: Long, val vintage: String, val requestId: Long)
+
 class TastingNoteViewModel(application: Application, private val repository: WineRepository) : AndroidViewModel(application) {
+
+    private val _wineNotesRequest = MutableStateFlow<WineTastingNotesRequest?>(null)
+    val wineNotesRequest: StateFlow<WineTastingNotesRequest?> = _wineNotesRequest.asStateFlow()
+    private var wineNotesRequestId = 0L
+    private val aromaIntensitySaveMutex = Mutex()
+
+    fun openWineTastingNotes(definitionId: Long, vintage: String) {
+        _wineNotesRequest.value = WineTastingNotesRequest(definitionId, displayVintage(vintage), ++wineNotesRequestId)
+    }
+
+    fun consumeWineTastingNotesRequest(requestId: Long) {
+        if (_wineNotesRequest.value?.requestId == requestId) _wineNotesRequest.value = null
+    }
 
     val tastingNotes = repository.tastingHistory
     val allDefinitions = repository.allDefinitions
@@ -85,6 +105,29 @@ class TastingNoteViewModel(application: Application, private val repository: Win
         .sortedBy { it.lowercase(Locale.ROOT) }
 
     suspend fun getTastingNoteById(noteId: Long): TastingNote? = repository.getTastingNoteById(noteId)
+
+    /** Persist pinch-resized aroma intensity without opening the full note editor. */
+    fun updateAromaIntensity(
+        noteId: Long,
+        descriptorId: String,
+        phase: TastingPhase,
+        intensity: Float?
+    ) {
+        viewModelScope.launch {
+            aromaIntensitySaveMutex.withLock {
+                try {
+                    val latest = repository.getTastingNoteById(noteId) ?: return@withLock
+                    val currentSensory = latest.sensoryData ?: SensoryData()
+                    val updatedSensory = setAromaIntensity(currentSensory, descriptorId, phase, intensity)
+                    if (updatedSensory != latest.sensoryData) {
+                        repository.saveTastingNote(latest.copy(sensoryData = updatedSensory))
+                    }
+                } catch (error: Exception) {
+                    Log.e("TastingNoteViewModel", "Unable to save aroma intensity", error)
+                }
+            }
+        }
+    }
 
     fun saveTastingNote(note: TastingNote, onSaved: (Long) -> Unit) =
         saveTastingNote(note, linkedEventId = null, onSaved = onSaved)

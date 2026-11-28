@@ -21,7 +21,26 @@ internal class ProducerGazetteer private constructor(
     private val trackSources: Boolean = false,
 ) : LinkedWineResolver.Index, AutoCloseable {
 
+    // Memoized lookups: the resolvers ask for the same spans repeatedly
+    // (both OCR engines' near-duplicate lines, joined phrases, and the
+    // final near-match pass), and each answer is an FTS query plus
+    // ranking over an immutable database. Behaviour-identical caching,
+    // bounded; used from the single scan thread per instance.
+    private val lookupCache = HashMap<String, List<ProducerResolver.Entity>>()
+    private val wineLookupCache = HashMap<String, List<LinkedWineResolver.Wine>>()
+
     override fun lookup(key: String, limit: Int, checkBudget: () -> Unit): List<ProducerResolver.Entity> {
+        require(limit in 1..ProducerResolver.MAX_PRODUCER_FUZZY_CANDIDATES)
+        checkBudget()
+        val cacheKey = "$key|$limit"
+        lookupCache[cacheKey]?.let { return it }
+        val result = lookupUncached(key, limit, checkBudget)
+        if (lookupCache.size > 1024) lookupCache.clear()
+        lookupCache[cacheKey] = result
+        return result
+    }
+
+    private fun lookupUncached(key: String, limit: Int, checkBudget: () -> Unit): List<ProducerResolver.Entity> {
         require(limit in 1..ProducerResolver.MAX_PRODUCER_FUZZY_CANDIDATES)
         checkBudget()
         fun read(sql: String, arg: String): List<ProducerResolver.Entity> {
@@ -57,6 +76,22 @@ internal class ProducerGazetteer private constructor(
     }
 
     override fun lookupWines(
+        key: String,
+        producerIds: Set<String>,
+        limit: Int,
+        checkBudget: () -> Unit,
+    ): List<LinkedWineResolver.Wine> {
+        require(producerIds.size in 1..8 && limit in 1..ProducerResolver.MAX_FUZZY_CANDIDATES)
+        checkBudget()
+        val cacheKey = "$key|${producerIds.sorted().joinToString(",")}|$limit"
+        wineLookupCache[cacheKey]?.let { return it }
+        val result = lookupWinesUncached(key, producerIds, limit, checkBudget)
+        if (wineLookupCache.size > 1024) wineLookupCache.clear()
+        wineLookupCache[cacheKey] = result
+        return result
+    }
+
+    private fun lookupWinesUncached(
         key: String,
         producerIds: Set<String>,
         limit: Int,

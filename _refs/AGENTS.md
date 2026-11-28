@@ -7,7 +7,7 @@ A native Android app (package `com.n8rtz.winetracker`) for wine tracking and cel
 
 ## Tech stack
 * **UI:** Jetpack Compose, Material 3 (custom Bordeaux theme — see UI rules in `ARCHIVE.md` W-001–W-003, W-007, W-008, W-024).
-* **Database:** Room/SQLite (schema v21) with KSP; manual dependency injection.
+* **Database:** Room/SQLite (schema v22) with KSP; manual dependency injection.
 * **Architecture:** MVVM with Kotlin coroutines and Flow; one ViewModel per feature area; all data access through `WineRepository` (see `ARCH.md`).
 * **Camera/OCR:** CameraX still capture, ML Kit text recognition and barcode scanning (on-device).
 * **Network (explicit, user-initiated only):** Retrofit + Open Food Facts for barcode lookup and the reviewed image import; Coil for image display.

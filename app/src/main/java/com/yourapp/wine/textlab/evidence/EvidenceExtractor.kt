@@ -36,6 +36,20 @@ internal class EvidenceExtractor(internal val baseKb:WineKnowledgeBase,private v
         val compactKey:String,
         val contextRequired:Boolean,
     )
+    /**
+     * Force every lazy first-use build (gazetteer trie, catalog key
+     * sets, raw-OCR appellation index) outside the timed scan. The
+     * probe strings are inert: they only populate caches. Identical
+     * results, earlier cost.
+     */
+    internal fun warmUp() {
+        gazetteer.matches("warmup")
+        isBroadGeographyLine("warmup")
+        isNonProducerCatalogTerm("warmup")
+        producerCandidatePenalty("warmup")
+        rawOcrSubregionByCompactLen.size
+    }
+
     private val deferRawOcrSubregionFallback=ThreadLocal<Boolean>()
     internal fun <T> withDeferredBlankSubregionFallback(block:()->T):T {
         val prev=deferRawOcrSubregionFallback.get()

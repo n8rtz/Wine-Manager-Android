@@ -361,6 +361,18 @@ class WineRepository(
         inventoryDao.deleteBottle(bottleId)
     }
 
+    /**
+     * Removes the bottle from the cellar AND deletes all of its tasting
+     * notes, which also removes the wine from Tasting Notes and Rankings
+     * (both are built from tasting notes). Consumption history is kept.
+     */
+    suspend fun deleteWineEverywhere(bottleId: Long, definitionId: Long, vintage: String) {
+        database.withTransaction {
+            inventoryDao.deleteBottle(bottleId)
+            tastingNoteDao.deleteNotesForWine(definitionId, vintage)
+        }
+    }
+
     suspend fun clearAllTables() {
         database.clearAllTables()
     }

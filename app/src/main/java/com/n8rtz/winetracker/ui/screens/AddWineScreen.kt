@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.PickVisualMediaRequest
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,8 +48,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.n8rtz.winetracker.data.repository.WineRepository
 import com.n8rtz.winetracker.data.local.HsvColor
+import com.n8rtz.winetracker.data.local.matchesWineSearch
 import com.n8rtz.winetracker.ui.components.DefaultColorField
 import com.n8rtz.winetracker.scanner.LabelScanState
+import com.n8rtz.winetracker.scanner.ScanTimerSettings
 import com.n8rtz.winetracker.scanner.AddWineDraft
 import com.n8rtz.winetracker.scanner.AddWineDraftStore
 import com.n8rtz.winetracker.scanner.isBusy
@@ -55,6 +59,7 @@ import com.n8rtz.winetracker.scanner.scanProgressFraction
 import com.n8rtz.winetracker.scanner.scanStepLabel
 import com.n8rtz.winetracker.scanner.WineLabelFraming
 import com.n8rtz.winetracker.ui.components.LabelScanCameraPreview
+import com.n8rtz.winetracker.ui.components.UnsavedChangesDialog
 import com.n8rtz.winetracker.viewmodels.WineViewModel
 import com.n8rtz.winetracker.viewmodels.ScannerViewModel
 import java.util.Calendar
@@ -77,8 +82,11 @@ fun AddWineScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
+    val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
     val formScrollState = rememberScrollState()
     val labelScanState by scannerViewModel.labelScanState.collectAsState()
+    // Developer option (Settings): time the whole label recognition.
+    val showScanTimer = ScanTimerSettings.isEnabled(context)
     val allDefinitions by viewModel.allDefinitions.collectAsState(initial = emptyList())
     var cameraPermissionGranted by remember {
         mutableStateOf(
@@ -155,6 +163,7 @@ fun AddWineScreen(
 
     var scanForm by remember { mutableStateOf(initialDraft.formState()) }
     var lastScanReport by remember { mutableStateOf<ScanReport?>(null) }
+    var showScanTimingsPopup by remember { mutableStateOf(false) }
     var lastScanId by remember { mutableStateOf(0L) }
     // Camera-first screen: ask once ever, so re-entering Add Wine never re-prompts.
     LaunchedEffect(Unit) {
@@ -196,6 +205,14 @@ fun AddWineScreen(
             selectedCountry, selectedRegion, selectedAppellation,
             scanForm.fields.filterValues { it.edited }.keys)
     }
+    // Same unsaved-changes prompt as the other editors: leaving with a
+    // changed form asks first. "Save" keeps the auto-saved draft for next
+    // time; "Don't save" clears it.
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+    fun requestClose() {
+        if (currentDraft() != initialDraft) showUnsavedChangesDialog = true else onClose()
+    }
+    BackHandler(onBack = ::requestClose)
     SideEffect { if (keepDraft) draftStore.save(currentDraft()) }
     val clearField: (FieldId) -> Unit = { field ->
         scanForm = scanForm.clearSuggestion(field, lastScanReport?.fill, formValues(), currentYear)
@@ -227,6 +244,7 @@ fun AddWineScreen(
     // Separated from the dismissal above so interrupting the animation loses nothing.
     LaunchedEffect(lastScanId) {
         if (lastScanId != 0L) {
+            if (showScanTimer) showScanTimingsPopup = true
             scaffoldState.bottomSheetState.expand()
             formScrollState.scrollTo(0)
         }
@@ -314,7 +332,7 @@ fun AddWineScreen(
         sheetPeekHeight = drawerPeekHeight,
         sheetDragHandle = { DrawerHandleCard() },
         sheetContent = {
-            if (showDrawerProgress) DrawerScanProgress(labelScanState)
+            if (showDrawerProgress) DrawerScanProgress(labelScanState, showScanTimer)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -330,6 +348,80 @@ fun AddWineScreen(
                         modifier = Modifier.fillMaxWidth(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
+                    )
+                }
+                if (showScanTimer) lastScanReport?.let { report ->
+                    Text(
+                        "Recognition took ${ScanTimerSettings.formatDuration(report.elapsedMs)}",
+                        modifier = Modifier.fillMaxWidth(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (showScanTimingsPopup && showScanTimer) lastScanReport?.let { report ->
+                    val stageLines = report.diagnostics.stages.map { timing ->
+                        scanStageLabel(timing.stage) to timing.ms
+                    }
+                    val detailLines = report.diagnostics.detailStages.map { timing ->
+                        scanStageLabel(timing.stage) to timing.ms
+                    }
+                    val shareText = buildString {
+                        appendLine("Label recognition time")
+                        report.diagnostics.stages.forEach { timing ->
+                            appendLine("${scanStageLabel(timing.stage)}: ${ScanTimerSettings.formatDurationWithMs(timing.ms)}")
+                            if (timing.stage == com.yourapp.wine.diagnostics.ScanStage.FILL) {
+                                detailLines.forEach { (label, ms) ->
+                                    appendLine("  $label: ${ScanTimerSettings.formatDurationWithMs(ms)}")
+                                }
+                            }
+                        }
+                        if (stageLines.isNotEmpty()) appendLine("—")
+                        appendLine("Total: ${ScanTimerSettings.formatDurationWithMs(report.elapsedMs)}")
+                    }.trimEnd()
+                    AlertDialog(
+                        onDismissRequest = { showScanTimingsPopup = false },
+                        title = { Text("Recognition time") },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                report.diagnostics.stages.forEach { timing ->
+                                    Row(Modifier.fillMaxWidth()) {
+                                        Text(scanStageLabel(timing.stage), style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier.weight(1f))
+                                        Text(ScanTimerSettings.formatDurationWithMs(timing.ms),
+                                            style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                    if (timing.stage == com.yourapp.wine.diagnostics.ScanStage.FILL) {
+                                        detailLines.forEach { (label, ms) ->
+                                            Row(Modifier.fillMaxWidth().padding(start = 16.dp)) {
+                                                Text(label, style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.weight(1f))
+                                                Text(ScanTimerSettings.formatDurationWithMs(ms),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            }
+                                        }
+                                    }
+                                }
+                                if (stageLines.isNotEmpty()) HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                                Row(Modifier.fillMaxWidth()) {
+                                    Text("Total", style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                                    Text(ScanTimerSettings.formatDurationWithMs(report.elapsedMs),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(shareText))
+                                showScanTimingsPopup = false
+                            }) { Text("Copy to clipboard") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showScanTimingsPopup = false }) { Text("Close") }
+                        }
                     )
                 }
 
@@ -355,7 +447,7 @@ fun AddWineScreen(
                         modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                     )
                     
-                    val filteredDefs = allDefinitions.filter { it.maker.contains(maker, ignoreCase = true) }.distinctBy { it.maker }
+                    val filteredDefs = allDefinitions.filter { matchesWineSearch(maker, it.maker) }.distinctBy { it.maker }
                     if (maker.isNotEmpty() && filteredDefs.isNotEmpty()) {
                         ExposedDropdownMenu(
                             expanded = producerSearchExpanded, 
@@ -744,6 +836,10 @@ fun AddWineScreen(
                 holdConsumed = false
                 holdRequestId = requestId
                 holdPhotoPath = photoFile.absolutePath
+                // Start recognizing speculatively behind the confirm
+                // screen; retaking cancels it. The timer still starts
+                // at confirmation.
+                scannerViewModel.onLabelPhotoTaken(requestId, photoFile)
             },
             onShutter = requestScan,
             onGallery = {
@@ -773,7 +869,26 @@ fun AddWineScreen(
             onRetryCamera = { cameraError = null; scanHint = null; cameraMountKey++ },
             onAllowCamera = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) },
             onEnterManually = { scope.launch { scaffoldState.bottomSheetState.expand() } },
-            onClose = onClose
+            onClose = ::requestClose
+        )
+    }
+
+    if (showUnsavedChangesDialog) {
+        UnsavedChangesDialog(
+            text = "You have unsaved changes to this wine. Save them before leaving?",
+            onSave = {
+                // The draft is already auto-saved as you type; keeping it
+                // is the save.
+                showUnsavedChangesDialog = false
+                onClose()
+            },
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                keepDraft = false
+                draftStore.clear()
+                onClose()
+            },
+            onCancel = { showUnsavedChangesDialog = false }
         )
     }
 }
@@ -802,16 +917,42 @@ private fun DrawerHandleCard() {
 
 /** Loading bar plus one-line status, sized to fit the progress peek exactly. */
 @Composable
-private fun DrawerScanProgress(scanState: LabelScanState) {
+private fun DrawerScanProgress(scanState: LabelScanState, showTimer: Boolean = false) {
     val message = scanState.scanStepLabel ?: return
     val progress = scanState.scanProgressFraction
     val animated by animateFloatAsState(targetValue = progress ?: 0f, label = "labelScanProgress")
+    // Developer-option timer: whole recognition, from shutter/import to
+    // the finished result. Ticks live here; the final total is the
+    // report's own elapsedMs, shown next to the form.
+    val startedMs = when (scanState) {
+        is LabelScanState.CapturingPhoto -> scanState.shutterMs
+        is LabelScanState.ImportingPhoto -> scanState.startedMs
+        is LabelScanState.Processing -> scanState.shutterMs
+        else -> null
+    }
+    var nowMs by remember(startedMs) { mutableStateOf(android.os.SystemClock.elapsedRealtime()) }
+    LaunchedEffect(showTimer, startedMs) {
+        if (showTimer && startedMs != null) {
+            while (true) {
+                nowMs = android.os.SystemClock.elapsedRealtime()
+                delay(100)
+            }
+        }
+    }
     Column(modifier = Modifier.fillMaxWidth().height(DRAWER_PROGRESS_HEIGHT).padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.Center) {
         if (progress == null) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         else LinearProgressIndicator(progress = { animated }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
-        Text(message, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(message, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f))
+            if (showTimer && startedMs != null) {
+                Text(ScanTimerSettings.formatDuration(nowMs - startedMs),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }
 
@@ -862,7 +1003,11 @@ private fun AddWineCameraLayer(
             frozenPath != null -> AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
                     .data(File(frozenPath))
-                    .crossfade(true)
+                    // Display-only decode: the recognition pipeline
+                    // reads the file itself, so bounding the bitmap to
+                    // screen size and skipping the crossfade only makes
+                    // the confirm still appear sooner after the shutter.
+                    .size(1600)
                     .memoryCachePolicy(CachePolicy.ENABLED)
                     .diskCachePolicy(CachePolicy.DISABLED)
                     .build(),
@@ -993,4 +1138,33 @@ private fun AddWineCameraLayer(
             }
         }
     }
+}
+
+/** User-facing names for the scan pipeline stages shown in the recognition-time popup. */
+private fun scanStageLabel(stage: com.yourapp.wine.diagnostics.ScanStage): String = when (stage) {
+    com.yourapp.wine.diagnostics.ScanStage.CAPTURE -> "Photo capture"
+    com.yourapp.wine.diagnostics.ScanStage.IMPORT -> "Photo import"
+    com.yourapp.wine.diagnostics.ScanStage.INITIALIZE -> "Reader setup"
+    com.yourapp.wine.diagnostics.ScanStage.WAIT_FOR_SLOT -> "Waiting for scanner"
+    com.yourapp.wine.diagnostics.ScanStage.NATIVE_LOAD -> "Native load"
+    com.yourapp.wine.diagnostics.ScanStage.DECODE -> "Photo decode"
+    com.yourapp.wine.diagnostics.ScanStage.QUALITY -> "Photo quality check"
+    com.yourapp.wine.diagnostics.ScanStage.LOCALIZE -> "Label localization"
+    com.yourapp.wine.diagnostics.ScanStage.WARP -> "Label straightening"
+    com.yourapp.wine.diagnostics.ScanStage.OCR -> "Text reading (OCR)"
+    com.yourapp.wine.diagnostics.ScanStage.GLINER -> "Label understanding (GLiNER)"
+    com.yourapp.wine.diagnostics.ScanStage.FILL -> "Filling in details"
+    com.yourapp.wine.diagnostics.ScanStage.KB_OPEN -> "Knowledge base load"
+    com.yourapp.wine.diagnostics.ScanStage.GAZETTEER_OPEN -> "Producer gazetteer load"
+    com.yourapp.wine.diagnostics.ScanStage.BASE_FILL -> "Base field fill"
+    com.yourapp.wine.diagnostics.ScanStage.EVIDENCE -> "Evidence & spatial analysis"
+    com.yourapp.wine.diagnostics.ScanStage.FIELD_DECISIONS -> "GLiNER field decisions"
+    com.yourapp.wine.diagnostics.ScanStage.EVIDENCE_SETUP -> "Evidence setup (indexes)"
+    com.yourapp.wine.diagnostics.ScanStage.PRODUCER_LOOKUPS -> "Producer/wine lookups (in evidence)"
+    com.yourapp.wine.diagnostics.ScanStage.EVIDENCE_EXTRACT -> "Evidence extraction (in evidence)"
+    com.yourapp.wine.diagnostics.ScanStage.EVIDENCE_HYBRID -> "Evidence hybrid merge (in evidence)"
+    com.yourapp.wine.diagnostics.ScanStage.SPATIAL_TAIL -> "Spatial phrases & tail (in evidence)"
+    com.yourapp.wine.diagnostics.ScanStage.PRODUCER_REPAIR -> "Producer repair (in evidence)"
+    com.yourapp.wine.diagnostics.ScanStage.WARM_SESSION -> "Reader pickup"
+    com.yourapp.wine.diagnostics.ScanStage.FIELD_ADAPTER -> "Field mapping"
 }

@@ -236,6 +236,16 @@ interface TastingNoteDao {
     @Query("DELETE FROM tasting_notes WHERE noteId = :noteId")
     suspend fun deleteNoteById(noteId: Long)
 
+    @Query("""
+        DELETE FROM tasting_notes
+        WHERE definitionId = :definitionId
+          AND (
+            vintage = :vintage
+            OR (:vintage IN ('NV', '(NV)') AND vintage IN ('NV', '(NV)'))
+          )
+    """)
+    suspend fun deleteNotesForWine(definitionId: Long, vintage: String)
+
     @Query("DELETE FROM tasting_notes")
     suspend fun deleteAllNotes()
 

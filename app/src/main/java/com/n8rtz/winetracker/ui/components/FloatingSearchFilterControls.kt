@@ -55,6 +55,7 @@ fun FloatingSearchFilterControls(
             val focusRequester = remember { FocusRequester() }
             LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
+            Column(modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -88,6 +89,7 @@ fun FloatingSearchFilterControls(
                 IconButton(onClick = onCloseSearch) {
                     Icon(Icons.Default.Close, "Close search")
                 }
+            }
             }
         } else {
             Column(

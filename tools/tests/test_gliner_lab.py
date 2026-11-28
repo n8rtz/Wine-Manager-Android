@@ -92,7 +92,7 @@ class GlinerLabStructureTests(unittest.TestCase):
         self.assertIn("ProducerResolver.Policy.singleReading", runner)
         self.assertIn("LabPostOcrModules.none.withIntegrated()", runner)
         self.assertIn('candidate="gliner_lane"', runner)
-        self.assertIn("recordsOverride=records", runner)
+        self.assertIn("recordsOverride=effectiveRecords", runner)
 
     def test_spatial_pipeline_accepts_grouped_lane_records(self):
         spatial = self.read(APP / "java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt")
@@ -464,6 +464,24 @@ class GlinerBundleInspectTests(unittest.TestCase):
             result = self.run_tool(folder)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("not one of the app's accepted layouts", result.stdout + result.stderr)
+
+    def test_prior_run_is_rescored_on_completed_photos_while_running(self):
+        view_model = self.read(ADAPTER / "com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt")
+        screen = self.read(ADAPTER / "com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt")
+        # Starting a run retains the prior run's per-image rows, not just
+        # its aggregate, so the scoreboard can rescore it mid-run on
+        # exactly the photos the current run has finished.
+        self.assertIn("val priorSamples:List<GlinerLabRow>", view_model)
+        self.assertIn("priorSamples=if(custom || state.aggregate==null) state.priorSamples else state.samples", view_model)
+        self.assertIn("val priorMatchedAggregate:GlinerAggregate? get()", view_model)
+        self.assertIn("aggregateGlinerRows(matched,stopped=false)", view_model)
+        self.assertIn("val priorMatchedMeanTotalMs:Long get()", view_model)
+        # The scoreboard prefers the matched (same-photos) prior row and
+        # labels it as such until it covers the prior's full corpus.
+        self.assertIn("val matchedPrior=state.priorMatchedAggregate", screen)
+        self.assertIn("prior=matchedPrior ?: state.priorAggregate", screen)
+        self.assertIn('" · same photos"', screen)
+        self.assertIn("priorMeanTotalMs=if(matchedPrior!=null) state.priorMatchedMeanTotalMs else state.priorMeanTotalMs", screen)
 
 
 def build_synthetic_bundle(folder, int4=True, classes=3):

@@ -42,6 +42,9 @@ class GlinerLabActivity:ComponentActivity() {
             val auditExportLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
                 uri?.let(vm::saveAuditHistory)
             }
+            val v1ImportLauncher=rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+                uri?.let(vm::importV1Results)
+            }
             val csvLauncher=rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
                 uri?.let(vm::saveCsv)
             }
@@ -57,6 +60,8 @@ class GlinerLabActivity:ComponentActivity() {
                         onClearBundle=vm::clearBundle,
                         onRefresh=vm::refresh,
                         onRunAll=vm::runAll,
+                        onRunV2=vm::runAllV2,
+                        onImportV1={ v1ImportLauncher.launch("application/json") },
                         onRunImage={ image -> vm.runSingle(image) },
                         onChooseImages={ imageLauncher.launch(arrayOf("image/*")) },
                         onRunCustom=vm::runCustomAll,

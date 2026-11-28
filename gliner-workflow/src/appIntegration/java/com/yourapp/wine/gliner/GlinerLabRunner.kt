@@ -5,12 +5,14 @@ import android.os.SystemClock
 import com.n8rtz.winetracker.BuildConfig
 import com.n8rtz.winetracker.scanner.LabelScanProgressStep
 import com.yourapp.wine.diagnostics.ScanStage
+import com.yourapp.wine.diagnostics.ScanStageTiming
 import com.yourapp.wine.gazetteer.ProducerGazetteer
 import com.yourapp.wine.gazetteer.ProducerResolver
 import com.yourapp.wine.kb.BundledGrapes
 import com.yourapp.wine.kb.BundledOrigins
 import com.yourapp.wine.kb.BundledWineStyles
 import com.yourapp.wine.phonecorpus.PhoneCorpusMath
+import com.yourapp.wine.textlab.TextLabBottleFilter
 import com.yourapp.wine.textlab.TextLabBudgets
 import com.yourapp.wine.textlab.TextLabFormPreview
 import com.yourapp.wine.textlab.TextLabJournal
@@ -76,6 +78,10 @@ internal data class GlinerLabImageResult(
     val workingHeight:Int = 1,
     val peakWorkingBitmaps:Int = 0,
     val engineReadings:Map<String,Int> = emptyMap(),
+    /** True when OCR read a crop around the detected text rather than the full photo. */
+    val croppedToTextRegion:Boolean = false,
+    /** Sub-stage timings inside FILL (KB/gazetteer loads, base fill, evidence, decisions). */
+    val detailStages:List<ScanStageTiming> = emptyList(),
 ) {
     val complete:Boolean get() = status=="complete" && eligible && errorCount==0
 }
@@ -88,6 +94,8 @@ internal data class GlinerLabImageResult(
  * Lab v7 and the legacy production baseline remain separate.
  */
 internal object GlinerLabRunner {
+    /** Production evidence cap: a label whose evidence extraction runs past this falls back to the base fill + resolvers. Lab runs keep the extractor default. */
+    const val PRODUCTION_EVIDENCE_BUDGET_MS=5_000L
     const val OCR_BUDGET_MS=60_000L
     const val GLINER_BUDGET_MS=30_000L
     const val POST_BUDGET_MS=60_000L
@@ -139,6 +147,34 @@ internal object GlinerLabRunner {
             LabPostOcrModules.none.withIntegrated(),SystemClock.elapsedRealtime(),deadlineAtMs,onStage)
     }
 
+    /** Per-photo budget of the production scanner (ProductionLabelScanner.BUDGET_MS). */
+    const val PRODUCTION_SCAN_BUDGET_MS=90_000L
+
+    /**
+     * GLiNER v2: the production wine scanner's exact pipeline (default
+     * lane config, production module set, per-photo 90 s deadline, so
+     * the production evidence budget applies) over a scored corpus
+     * sample. Identical computation to a production photo scan; only
+     * the sample (and therefore the scoring) comes from the lab.
+     */
+    suspend fun runProductionVariant(
+        context:Context,
+        sample:GlinerLabSample,
+        model:GlinerOnnxModel,
+        warm:TextLabWineExtraction.WarmSession,
+        workFolder:File,
+    ):GlinerLabImageResult = withContext(Dispatchers.Default) {
+        val started=SystemClock.elapsedRealtime()
+        val photo=File(workFolder,"${sample.image}")
+        try {
+            GlinerLabCorpus.copyTo(context,sample,photo)
+            runPhoto(context,photo,sample,model,GlinerLaneConfig(),warm,
+                LabPostOcrModules.none.withIntegrated(),started,started+PRODUCTION_SCAN_BUDGET_MS)
+        } finally {
+            photo.delete()
+        }
+    }
+
     private suspend fun runPhoto(context:Context,photo:File,sample:GlinerLabSample,model:GlinerOnnxModel,
         laneConfig:GlinerLaneConfig,warm:TextLabWineExtraction.WarmSession,modules:LabPostOcrModules,
         started:Long,deadlineAtMs:Long=Long.MAX_VALUE,
@@ -176,7 +212,9 @@ internal object GlinerLabRunner {
             val postStarted=SystemClock.elapsedRealtime()
             check(postStarted<deadlineAtMs) { "Scan deadline reached before field extraction" }
             onStage(LabelScanProgressStep.FILL_DETAILS)
-            val post=postProcess(context,records,warm,modules,labelled)
+            val post=postProcess(context,records,warm,modules,labelled,
+                evidenceBudgetMs=if(deadlineAtMs==Long.MAX_VALUE) com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS else PRODUCTION_EVIDENCE_BUDGET_MS,
+                repairBudgetMs=60_000L)
             postMs=SystemClock.elapsedRealtime()-postStarted
             check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached during field extraction" }
             val laneHints=labelled.entities.map { GlinerFieldHint(it.lane,it.text,it.score) }
@@ -184,10 +222,13 @@ internal object GlinerLabRunner {
                 GlinerEvidenceLine(reading.engineId,reading.text,reading.box.left,reading.box.top,
                     reading.box.right,reading.box.bottom)
             }
+            val decisionStart=SystemClock.elapsedRealtime()
             val decision=if(post.status=="complete") GlinerFieldDecisionPolicy.applyWithEvidence(
                 post.fields,laneHints,decisionReadings,grapeTerms,styleTerms,knownPlaceKeys,GlinerGeography.origins,
                 GlinerCatalogIndexes.italianAppellations,GlinerCatalogIndexes.usAvas,
                 GlinerCatalogIndexes.frenchAppellations) else GlinerFieldDecision(post.fields,emptyList())
+            val detailStages=post.detailStages+ScanStageTiming(ScanStage.FIELD_DECISIONS,
+                SystemClock.elapsedRealtime()-decisionStart)
             val fields=decision.fields
             val fieldStates=post.states.toMutableMap().apply {
                 PhoneCorpusMath.fields.filter { fields[it].orEmpty()!=post.fields[it].orEmpty() }
@@ -238,7 +279,8 @@ internal object GlinerLabRunner {
                 fieldDecisions=decision.changes,
                 originalWidth=ocr.originalWidth,originalHeight=ocr.originalHeight,
                 workingWidth=ocr.workingWidth,workingHeight=ocr.workingHeight,
-                peakWorkingBitmaps=ocr.peakWorkingBitmaps,engineReadings=ocr.engineReadings,
+                peakWorkingBitmaps=ocr.peakWorkingBitmaps,engineReadings=ocr.engineReadings,croppedToTextRegion=ocr.croppedToTextRegion,
+                detailStages=detailStages,
                 notes=buildString {
                     appendLine(ocr.description)
                     appendLine("readings: "+ocr.engineReadings.entries.joinToString(" · ") { "${it.key} ${it.value} lines" })
@@ -266,6 +308,7 @@ internal object GlinerLabRunner {
         val status:String,
         val message:String,
         val notes:List<String>,
+        val detailStages:List<ScanStageTiming> = emptyList(),
     )
 
     /**
@@ -280,6 +323,8 @@ internal object GlinerLabRunner {
         warm:TextLabWineExtraction.WarmSession,
         modules:LabPostOcrModules,
         labelled:GlinerLabelResult,
+        evidenceBudgetMs:Long=com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS,
+        repairBudgetMs:Long=60_000L,
     ):PostOutcome {
         val year=Year.now().value
         val journal=TextLabJournal(setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true)
@@ -294,12 +339,42 @@ internal object GlinerLabRunner {
             "lab_modules" to modules.signatureKey(),
         ))
         val notes=mutableListOf<String>()
+        // Run the bottle filter once, up front: the spatial contender
+        // would otherwise recompute the whole base fill on the filtered
+        // readings whenever the filter drops a token (side bottles,
+        // medal stickers). Filling the filtered set directly yields the
+        // same anchor the spatial stage would have rebuilt.
+        val bottleKept=TextLabBottleFilter.filterTokens(records).kept
+        // No score floor on the post records: a 0.45 filter here used to
+        // drop weak readings before the fill/evidence stages on the theory
+        // that downstream span thresholds (>=.75 paddle / >=.60 ML Kit)
+        // ignore them anyway. The lab A/B disproved that — the form fill
+        // and phrase generation consume the raw records, and dropping
+        // low-score lines (ML Kit scores are estimates) cost producer /
+        // wine-name fields across the corpus with identical OCR readings
+        // on both sides. The span thresholds still gate what counts as
+        // evidence; they no longer delete text before it can be used.
+        val effectiveRecords=bottleKept
+        // Sub-stage timings inside FILL, surfaced in the scan diagnostics
+        // (developer recognition-time popup) so a slow fill can be blamed
+        // on data loads vs. computation.
+        val detailStages=mutableListOf<ScanStageTiming>()
+        var segmentStart=SystemClock.elapsedRealtime()
         val kb=warm.knowledgeBase()
+        detailStages += ScanStageTiming(ScanStage.KB_OPEN,SystemClock.elapsedRealtime()-segmentStart)
+        segmentStart=SystemClock.elapsedRealtime()
         val fill=warm.fillEngine(kb)
-        TextLabFormPreview.append(journal,fill,year,recordsOverride=records)
+        TextLabFormPreview.append(journal,fill,year,recordsOverride=effectiveRecords)
+        detailStages += ScanStageTiming(ScanStage.BASE_FILL,SystemClock.elapsedRealtime()-segmentStart)
+        segmentStart=SystemClock.elapsedRealtime()
+        // The full evidence/spatial stage always runs: no fast path
+        // skips it, so field quality never depends on a shortcut.
+        run {
         val engine=warm.evidenceExtractor(kb,true,true,modules)
         val hybrid=warm.anchorHybrid(kb)
         val repair=warm.producerRepair(kb)
+        detailStages += ScanStageTiming(ScanStage.EVIDENCE_SETUP,SystemClock.elapsedRealtime()-segmentStart)
+        segmentStart=SystemClock.elapsedRealtime()
         var producers=warm.cachedGazetteer(true)?.gazetteer
         var ownsProducers=producers==null
         var unavailable="Lab expanded producer index required"
@@ -314,6 +389,8 @@ internal object GlinerLabRunner {
                 notes += unavailable
             }
         }
+        detailStages += ScanStageTiming(ScanStage.GAZETTEER_OPEN,SystemClock.elapsedRealtime()-segmentStart)
+        segmentStart=SystemClock.elapsedRealtime()
         try {
             var lookupDeadline=0L
             val lookupBudget={
@@ -322,13 +399,21 @@ internal object GlinerLabRunner {
             }
             TextLabSpatialPreview.append(journal,engine,hybrid,repair,year,producers,unavailable,lookupBudget,
                 candidate="gliner_lane",stagePrefix="gliner_",fillEngine=fill,labModules=modules,
-                policy=ProducerResolver.Policy.singleReading,recordsOverride=records)
+                policy=ProducerResolver.Policy.singleReading,recordsOverride=effectiveRecords,evidenceBudgetMs=evidenceBudgetMs,repairBudgetMs=repairBudgetMs)
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) {
             notes += "spatial contender error: ${error.javaClass.simpleName}: ${error.message}"
         } finally { if(ownsProducers) producers?.close() }
-        val summary=journal.rows.lastOrNull { it["stage"]=="gliner_evidence_summary" }
-            ?: journal.rows.lastOrNull { it["stage"]=="form_summary" }
+        }
+        // A failed evidence summary (e.g. the production evidence
+        // budget cap firing mid-extraction) must degrade to the base
+        // fill, never fail the whole scan: the base form summary is
+        // the fallback field source.
+        val spatialSummary=journal.rows.lastOrNull { it["stage"]=="gliner_evidence_summary" }
+        val summary=if(spatialSummary!=null && spatialSummary["status"]!="failed") spatialSummary
+            else journal.rows.lastOrNull { it["stage"]=="form_summary" }
+        if(spatialSummary!=null && spatialSummary["status"]=="failed" && summary!=null)
+            notes += "evidence/spatial stage failed or exceeded its budget; base field fill used"
         val fields=PhoneCorpusMath.fields.associateWith { field ->
             if(summary?.get("${field}_state")=="RED") "" else summary?.get(field).orEmpty()
         }
@@ -336,10 +421,35 @@ internal object GlinerLabRunner {
         val failed=summary==null || summary["status"]=="failed"
         if(summary==null) notes += "No post-processing summary row was produced"
         if(summary!=null && summary["status"]=="failed") notes += "post-processing detail: ${summary["details"].orEmpty()}"
+        detailStages += ScanStageTiming(ScanStage.EVIDENCE,SystemClock.elapsedRealtime()-segmentStart)
+        // The spatial stage already measured its gazetteer lookups into
+        // the summary row; surface them (a subset of EVIDENCE) so the
+        // remaining extractor computation is visible by subtraction.
+        val lookupMs=(summary?.get("producer_gazetteer_ms")?.toLongOrNull() ?: 0L)+
+            (summary?.get("wine_gazetteer_ms")?.toLongOrNull() ?: 0L)
+        if(lookupMs>0) detailStages += ScanStageTiming(ScanStage.PRODUCER_LOOKUPS,lookupMs)
+        // The evidence preview copies its own summary into the journal
+        // before the spatial summary overwrites the stage name; its
+        // work_ms is extractor + hybrid time. Surfacing it splits the
+        // EVIDENCE stage into extraction vs the spatial resolver tail
+        // (phrase proposals, producer/wine resolution, near-match).
+        val evidenceRow=journal.rows.filter { it["stage"]=="gliner_evidence_summary" }.firstOrNull()
+        val extractMs=evidenceRow?.get("evidence_extract_ms")?.toLongOrNull() ?: 0L
+        if(extractMs>0) detailStages += ScanStageTiming(ScanStage.EVIDENCE_EXTRACT,extractMs)
+        val hybridMs=evidenceRow?.get("evidence_hybrid_ms")?.toLongOrNull() ?: 0L
+        if(hybridMs>0) detailStages += ScanStageTiming(ScanStage.EVIDENCE_HYBRID,hybridMs)
+        val repairMs=evidenceRow?.get("evidence_repair_ms")?.toLongOrNull() ?: 0L
+        if(repairMs>0) detailStages += ScanStageTiming(ScanStage.PRODUCER_REPAIR,repairMs)
+        // Whatever of the EVIDENCE stage is not extraction, hybrid or
+        // gazetteer lookups is the spatial tail: phrase proposals,
+        // resolver glue, completion/near-match sections, journal work.
+        val evidenceMs=detailStages.lastOrNull { it.stage==ScanStage.EVIDENCE }?.ms ?: 0L
+        val tailMs=(evidenceMs-extractMs-hybridMs-lookupMs).coerceAtLeast(0)
+        if(tailMs>0) detailStages += ScanStageTiming(ScanStage.SPATIAL_TAIL,tailMs)
         val valuesFound=PhoneCorpusMath.fields.count { fields[it].orEmpty().isNotBlank() }
         return PostOutcome(fields,states,if(failed) "failed" else "complete",
             if(failed) "Post-processing failed" else "$valuesFound/6 fields suggested before GLiNER field decisions",
-            notes)
+            notes,detailStages)
     }
 
     /** Failure row for an unexpected exception outside the stage handlers, so the table stays complete. */

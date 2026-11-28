@@ -16,7 +16,6 @@ import com.yourapp.wine.textlab.PaddleTextDetector
 import com.yourapp.wine.textlab.PaddleTextRecognizer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
@@ -54,10 +53,20 @@ internal object GlinerOcr {
         val workingWidth:Int,
         val workingHeight:Int,
         val peakWorkingBitmaps:Int,
+        /** Legacy diagnostics flag: both engines always read the full photo now. */
+        val croppedToTextRegion:Boolean=false,
     )
 
     /** App-scoped client: the recognizer is bundled, so constructing one per photo is waste. */
     private val mlKit by lazy { MlKitOcrEngine(WineScannerServices.nativeGate) }
+
+    /** Loads the bundled ML Kit model on a dummy image so the first real read does not pay it. */
+    suspend fun warmMlKit() {
+        val dummy=Bitmap.createBitmap(32,32,Bitmap.Config.ARGB_8888)
+        try { mlKit.recognize(dummy,"warm",ScanDeadline(SystemClock.elapsedRealtime()+30_000)) }
+        catch(cancel:CancellationException) { throw cancel }
+        catch(_:Exception) { }
+    }
 
     suspend fun recognize(context:Context,file:File,deadlineAtMs:Long,
         onStage:(LabelScanProgressStep)->Unit={}):Outcome =
@@ -72,22 +81,35 @@ internal object GlinerOcr {
                     val bitmap=decoded.bitmap
                     val deadline=ScanDeadline(deadlineAtMs)
                     onStage(LabelScanProgressStep.READ_TEXT)
-                    val (mlKitReadings,paddleReadings)=coroutineScope {
+                    // Both engines read the full photo. The Paddle detector
+                    // (which runs anyway) supplies the line regions for the
+                    // recognizer, while ML Kit reads the whole frame so
+                    // lines the detector missed still reach the fusion. A
+                    // text-region crop used to sit here; the lab A/B showed
+                    // it amputated exactly those ML-Kit-only lines and
+                    // jittered the remaining readings, costing fields.
+                    val detection=detectRegions(context,bitmap,workspace,spec)
+                    val regions=detection.regions.lines
+                    val (mlKitReadings,paddleResult)=coroutineScope {
                         val mlkit=async(Dispatchers.Default) { readMlKit(bitmap,deadline) }
-                        val paddle=async(Dispatchers.Default) { readPaddle(context,bitmap,workspace,spec,deadlineAtMs) }
+                        val paddle=async(Dispatchers.Default) { readPaddle(context,bitmap,workspace,spec,deadlineAtMs,regions) }
                         val first=mlkit.await()
                         // The reads run together; only report the checking phase when the second
                         // read is still running, so a fast pair never flashes a stale step.
                         if(!paddle.isCompleted) onStage(LabelScanProgressStep.CHECK_READ)
                         first to paddle.await()
                     }
+                    val paddleReadings=paddleResult.first
+                    val paddleError=paddleResult.second
                     val fused=GlinerFusion.fuse(mlKitReadings+paddleReadings)
                     val engineReadings=linkedMapOf(MLKIT_ID to mlKitReadings.size,PADDLE_ID to paddleReadings.size)
                     val elapsed=SystemClock.elapsedRealtime()-started
                     Outcome(fused,mlKitReadings+paddleReadings,elapsed,"${spec.detector.name} + ${spec.recognizer.name} = ${paddleReadings.size} lines; "+
-                        "ML Kit Latin = ${mlKitReadings.size} lines; fused = ${fused.size} lines"+
+                        "ML Kit Latin = ${mlKitReadings.size} lines; fused = ${fused.size} lines; "+
+                        "full frame"+
+                        (paddleError?.let { " · paddle: $it" } ?: "")+
                         (if(elapsed>deadlineAtMs-started) " · budget reached" else ""),engineReadings,
-                        decoded.origW,decoded.origH,bitmap.width,bitmap.height,workspace.peakCount)
+                        decoded.origW,decoded.origH,bitmap.width,bitmap.height,workspace.peakCount,false)
                 }
             }
         }
@@ -105,23 +127,42 @@ internal object GlinerOcr {
         } catch(cancel:CancellationException) { throw cancel }
         catch(_:Exception) { emptyList() }
 
-    /** Pinned PP-OCRv6 Medium detector + line recognizer, CTC posterior per line. */
+    /** Pinned PP-OCRv6 Medium detector pass; its regions drive the line recognizer. */
+    private suspend fun detectRegions(
+        context:Context,
+        bitmap:Bitmap,
+        workspace:BitmapWorkspace,
+        spec:com.yourapp.wine.textlab.PaddleCandidate,
+    ):PaddleTextDetector.Detection {
+        // The session stays open for the next photo/scan: releasing and
+        // reopening per photo re-verified (SHA-256 over ~138 MB of model
+        // files) and re-created both ONNX sessions every time (~1 s/photo),
+        // which also defeats the warm-up that pre-creates them. Other
+        // flows release after their own use; a closed session simply
+        // reopens on the next detect.
+        return PaddleTextDetector.detect(context,bitmap,workspace,WineScannerServices.nativeGate,spec)
+    }
+
+    /**
+     * Pinned PP-OCRv6 Medium line recognizer over pre-detected regions, CTC
+     * posterior per line. Returns the readings plus the first per-region
+     * failure (if any): a region failure drops that line, but a systematic
+     * failure must stay visible in the outcome note instead of silently
+     * reading as "0 lines".
+     */
     private suspend fun readPaddle(
         context:Context,
         bitmap:Bitmap,
         workspace:BitmapWorkspace,
         spec:com.yourapp.wine.textlab.PaddleCandidate,
         deadlineAtMs:Long,
-    ):List<GlinerFusion.Reading> {
+        regions:List<com.yourapp.wine.textlab.PaddleRegion>,
+    ):Pair<List<GlinerFusion.Reading>,String?> {
         val gate=WineScannerServices.nativeGate
         val lines=mutableListOf<GlinerFusion.Reading>()
-        try {
-            val detection=try {
-                PaddleTextDetector.detect(context,bitmap,workspace,gate,spec)
-            } finally {
-                withContext(NonCancellable) { PaddleTextDetector.release(gate) }
-            }
-            for(region in detection.regions.lines) {
+        var firstError:String?=null
+        // Sessions intentionally stay open across photos (see detectRegions).
+        for(region in regions) {
                 if(SystemClock.elapsedRealtime()>=deadlineAtMs) break
                 val box=normalizedBox(region.quadBase,bitmap.width,bitmap.height)
                 var text=""
@@ -137,17 +178,15 @@ internal object GlinerOcr {
                     }
                 } catch(cancel:CancellationException) { throw cancel }
                 catch(expired:CandidateBudgetExpired) { break }
-                catch(_:Exception) { text="" }
+                catch(error:Exception) {
+                    if(firstError==null) firstError="${error.javaClass.simpleName}: ${error.message ?: "no detail"}"
+                    text=""
+                }
                 if(text.isNotBlank()) lines += GlinerFusion.Reading(PADDLE_ID,text,box,region.quadBase,
                     posterior.takeIf { it>0f }?.coerceIn(0.01f,0.99f) ?: 0.5f,
                     variantId="V0",scoreIsEstimated=true)
-            }
-        } finally {
-            withContext(NonCancellable) {
-                try { PaddleTextRecognizer.release(gate) } finally { PaddleTextDetector.release(gate) }
-            }
         }
-        return lines
+        return lines to firstError
     }
 
     private fun normalizedBox(quad:List<android.graphics.PointF>,width:Int,height:Int):RectF {

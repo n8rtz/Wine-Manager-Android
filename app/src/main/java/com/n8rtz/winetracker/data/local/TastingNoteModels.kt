@@ -5,6 +5,9 @@ import kotlin.math.roundToInt
 
 /** Stable W-061 phase IDs. Labels are display-only and must never be persisted as IDs. */
 enum class TastingPhase(val label: String) {
+    // Pool for aromas picked on the wheel before the user drags them to a
+    // real phase in the tasting note.
+    UNCATEGORIZED("Uncategorized"),
     AROMA_BEFORE_TASTING("Aroma"),
     ENTRY("Entry"),
     MID_PALATE("Mid-palate"),
@@ -12,6 +15,7 @@ enum class TastingPhase(val label: String) {
 
     val sectionLabel: String
         get() = when (this) {
+            UNCATEGORIZED -> "Uncategorized"
             AROMA_BEFORE_TASTING -> "Visual / Aroma"
             ENTRY -> "Entry"
             MID_PALATE -> "Mid-palate"

@@ -6,7 +6,7 @@
 
 ## How to use (rules for humans and AI agents)
 1. **One list.** Log new wishes, bugs, decisions and cleanup items here — not in new files.
-2. **Wishes:** `W-nnn`, next free number **W-065**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
+2. **Wishes:** `W-nnn`, next free number **W-069**. Use *Goal / UI-Trigger / Location / Status*. UI styling rules are in `ARCHIVE.md` (W-001–W-003, W-007, W-008, W-024).
 3. **Bugs:** `Bug-nnn`, next free number **Bug-031**. Add new bugs at the top of *Active bugs* using the template below. Be concise and note the technical root cause if known. Do **not** fix a logged bug unless asked to “fix Bug-nnn”.
 4. **Don’t silently edit other entries.** Change an entry’s *status* freely; don’t rewrite or delete its description unless asked.
 5. **When something ships:** move the entry to `ARCHIVE.md` (Part A for wishes, Part B for bugs), add a line to `CHANGELOG.md` under `[Unreleased]`, and update `THINGS_TO_CHECK.md` if it needs a manual check.
@@ -74,7 +74,7 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 
 ## 2. Open wishes — in priority order
 
-*Rewritten 2026-10-15 against the current architecture (schema v21, `WineCard` shared by Cellar/Rankings/Notes, in-memory filter states, still-photo scanner, aroma wheel, Open Food Facts importer). Several entries originally described an app that no longer exists; the original lists (`wishes.md`, `wishes-v2.md`, `PLAN.md`) remain in git history at `d4ba796`, and where the old wording still helps it is kept in a collapsed “Original specification” block.*
+*Rewritten 2026-10-15 against the current architecture (schema v22, `WineCard` shared by Cellar/Rankings/Notes, in-memory filter states, still-photo scanner, aroma wheel, Open Food Facts importer). Several entries originally described an app that no longer exists; the original lists (`wishes.md`, `wishes-v2.md`, `PLAN.md`) remain in git history at `d4ba796`, and where the old wording still helps it is kept in a collapsed “Original specification” block.*
 *How the order is used, how complexity is defined, and the release plan: [`PIPELINE.md`](PIPELINE.md).*
 
 **Complexity:** **S** = one component/screen, no schema change · **M** = several files across UI + ViewModel, new pure-Kotlin logic with JVM tests, no schema change · **L** = Room migration or a new subsystem; needs a brief · **XL** = multi-release program with external content/licensing.
@@ -93,6 +93,10 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 | 9 | W-061 | Structured tasting notes — color picker, phase-aware aromas, aroma intensity, four sections | L (implemented; Android verification pending) | Fixed – awaiting device check | TBD (owner to rank) |
 | 10 | W-062 | Wine wishlist — wines to buy later, not yet owned | L (persistent list + UI; brief needed) | Open — placement and scope TBD | TBD (owner to rank) |
 | 11 | W-063 | Smart label-edge auto-crop for the scan photo (display first, pipeline input later) | M, possibly L (needs a brief) | Open — parked by owner decision 2026-11-07 | TBD |
+| 12 | W-065 | Wine-card UI cleanup: improve layout and rating prominence | M | Open — logged only; do not implement yet | TBD |
+| 13 | W-066 | Ratings dot plot (Fed-style): one dot per wine, coloured by wine type | M | Open — logged only; do not implement yet | TBD |
+| 14 | W-067 | Global fragment search: tokenised, cross-field, typo-tolerant wine search (Cellar first) | M | Implemented — Android build/device check pending | TBD |
+| 15 | W-068 | Welcome tour overlays for new users (feature coach marks: aroma wheel, chips, pinch-resize, racks…) | L | Open — logged only; do not implement yet | TBD |
 
 *(W-017, W-018 and W-031 were never written down in the original lists.)*
 *(W-060 was logged 2026-11-04, W-061 on 2026-11-05, and W-062 on 2026-11-07 at the owner's request; W-063 (smart label-edge auto-crop) was parked by owner decision 2026-11-07; ranks 8–11 are placeholders until the owner re-ranks them.)*
@@ -355,6 +359,56 @@ Every earlier logged bug has been resolved (see `ARCHIVE.md` Part B). Bug-005 an
 * **Current state (verified in source 2026-11-07):** the production pipeline does not crop at all — it reads the full photo (decode is downsample + EXIF only; `LOCALIZE`/`WARP` exist only in the legacy `OfflineWineScanner` and the `PhoneCorpusRunner` benchmark paths). The photo kept on Add Wine therefore already shows exactly what the pipeline reads, so there is no display/pipeline mismatch to fix today.
 * **Constraints for the brief:** edge detection must be conservative — an uncertain crop falls back to the full photo (cutting the label is worse than showing background); must run on-device with no new paid provider; any pipeline-input change needs a before/after benchmark comparison (recognition behaviour change, cf. W-058).
 * **Revisit when:** the owner asks, or measurement shows cropping would help OCR accuracy.
+
+### 12. W-065 — Wine-card UI cleanup: improve layout and rating prominence *(logged 2026-11-09)*
+**Complexity:** M (shared card UI across Cellar, Notes and Rankings; no data/schema change) · **Status:** Open — logged only; do not implement yet
+* **Goal:** Improve the overall layout of the shared wine cards and make their existing rating display more prominent.
+* **UI-Trigger / Location:** Shared `WineCard` in `ui/components/WineCard.kt`, used by Cellar, Tasting Notes and Rankings.
+* **Scope:** Revisit the card's visual hierarchy and spacing, and increase the at-a-glance prominence of the existing rating or rating range. Preserve current rating data and behavior.
+* **Design:** Not specified yet; work out the card layout with the owner before implementation.
+* **Owner instruction:** Record this cleanup item only. Do not change the wine-card layout or rating presentation until the owner asks to work on W-065.
+
+### 13. W-066 — Ratings distribution dot plot *(logged 2026-11-10)*
+**Complexity:** M (new chart UI; data already available from tasting notes, no schema change) · **Status:** Open — logged only; do not implement yet
+* **Goal:** A dot plot, like the Federal Reserve's dot plot, showing the distribution of wine ratings. Each dot represents one wine, positioned by its rating (dots stack at the same rating so frequency is visible at a glance), and coloured by wine type — red, white, or rosé.
+* **UI-Trigger / Location:** TBD with the owner (candidates: Rankings, the Pareto/analytics area, or its own chart view).
+* **Design needed before implementation:** which rating represents a wine with several tasting notes (most recent is the app convention), the rating axis range/buckets, how sparkling/other types are coloured, and whether dot tap should jump to the wine. Record this feature only; do not build it until the owner asks to work on W-066.
+* **Extension — two-group comparison (owner, 2026-11-10):** advanced analytics filters let the owner define two groups and overlay their dot plots on the same axes to compare rating distributions — e.g. red vs white, France vs Spain, bottles under $10 vs $15–20 bottles. Group definitions can combine the app's existing filter dimensions (wine type, country/region, price range, and similar). Design questions for implementation time: how the two overlaid groups stay visually distinguishable when dots share the type colouring (e.g. shape/opacity split, or group colour replacing type colour in compare mode), whether groups are mutually exclusive or may overlap, and whether more than two groups are ever needed (owner specified two).
+
+### 14. W-067 — Global fragment / dynamic wine search *(logged 2026-11-11)*
+**Complexity:** M (one shared pure-JVM matcher + call-site swaps; no schema change) · **Status:** Implemented 2026-11-11 — Android build/device check pending
+* **Problem (owner, 2026-11-11):** In a store, searching the Cellar for "Kirkland Chablis" returned nothing because the wine is stored as maker "Kirkland Signature" + name "Chablis". Cellar search today (`CellarScreen.kt`, `matchesSearch`) is a single-phrase substring test against maker OR name separately, so a query whose words are split across fields — or reordered, abbreviated or slightly mistyped — can never match. The same single-phrase logic is duplicated in Notes (`TastingNotesScreen.kt`) and Rankings (`RankingsViewModel.kt`).
+* **Goal:** A powerful global search that takes fragments and pieces them together: every word the user types must be found *somewhere* in the wine (maker, name, vintage, type, country/region/subregion), in any order, across field boundaries.
+* **Precedent in codebase:** `AromaTaxonomy.search()` already tokenises the query, diacritic-folds text (`fold()` via `Normalizer` NFD + strip marks), requires all tokens to match, and ranks hits — the wine search should follow the same pattern so the app has one search philosophy.
+* **Plan framework:**
+  1. **Shared matcher (pure JVM, unit-testable):** e.g. `data/local/WineSearch.kt` with `normalizeSearchText()` (lowercase, strip diacritics so "chateau" finds "Château", drop punctuation/apostrophes, collapse whitespace), a per-wine `WineSearchDocument` (precomputed normalised word list built once from maker/name/vintage/type/country/region/subregion), and `scoreWineSearch(queryTokens, document): Int?` (null = no match).
+  2. **Matching tiers per token** (best first): exact word → word prefix ("chab" → "Chablis") → substring → fuzzy (edit distance ≤1, only for tokens of length ≥5, e.g. "chabls"). A wine matches when *every* query token matches at some tier (AND semantics across the whole document, not per field).
+  3. **Ranking:** exact-phrase boost, then sum of token tiers (name/maker word hits outrank location hits, prefixes outrank substrings outrank fuzzy). While a query is active, sort by score; keep the user's chosen sort as tie-break / when the query is blank.
+  4. **Rollout order:** Phase 1 Cellar (the in-store use case) → Phase 2 Notes + Rankings + editor wine picker (`matchingWineChoices`) → Phase 3 suggestion dropdown under the Cellar search field (top matches as you type) if the owner wants it.
+  5. **Tests:** pure-JVM tests over a fixed corpus — "Kirkland Chablis", reversed "Chablis Kirkland", abbreviation "kirk sig", accent "chateau" vs "Château", typo "chablis"→"chabls", vintage "2019 chablis" — plus Python source contracts for each call site using the shared matcher (no remaining `maker.contains(searchQuery` single-phrase checks).
+* **Open decisions for implementation time:** whether fuzzy matching is on by default (risk: surprising matches); whether type/region tokens should count ("french red"); relevance sort vs respecting the user's sort while searching; how far suggestions go (plain ranked list vs dropdown UI).
+* **Owner instruction:** Record this plan only. Do not build it until the owner asks to work on W-067.
+* **As built (2026-11-11):** shared matcher in `data/local/WineSearch.kt` (`normalizeSearchText`, `WineSearchDocument`, `scoreWineSearch`; tiers exact/prefix/substring/fuzzy≤1 for tokens ≥5 chars, diacritic folding, phrase bonus, maker/name fields weigh first). Wired into Cellar (precomputed documents + relevance-first sort while searching), Notes, Rankings, note-editor wine picker, and Add Wine producer suggestions. Search-as-you-type suggestion dropdowns were added then removed the next day at the owner's direction (2026-11-25 screenshot review): the labels truncated wine names/vintages and the dropdown covered the cards. The fragment matcher and relevance ranking in the result lists remain; the Cellar search field gained a one-tap ✕ clear instead. The note-editor wine picker and Add Wine producer field keep their selection dropdowns and rank by fragment score. JVM tests in `WineSearchTest.kt` cover the store case; Python contracts in `tools/tests/test_w067_fragment_search.py`. Decisions taken: fuzzy on by default (long tokens only), type/country/region tokens count, relevance sort while a query is active with the user's sort as tie-break.
+
+### 15. W-068 — Welcome tour overlays for new users *(logged 2026-11-11)*
+**Complexity:** L (app-wide overlay system + per-screen targets + persisted progress; no schema change) · **Status:** Open — logged only; do not implement yet
+* **Goal:** When a new user first opens the app, a guided welcome tour walks them through the features and nuances that aren't self-evident — spotlighting the actual UI elements (dimmed overlay, highlighted control, short caption, Next/Skip) instead of a wall of text. Existing users should never be nagged; the tour runs once, can be skipped at any step, and can be replayed on demand.
+* **UI-Trigger / Location:** App-wide. First-run trigger from `MainActivity` hosting (after first data load); replay entry in Profile/Settings ("Replay welcome tour"). Steps anchored to real controls on Cellar, tasting note view/edit, aroma wheel, Notes and Racks screens.
+* **Candidate stops (owner examples first):**
+  1. **Aroma wheel** — tap segments to pick aromas; list/wheel toggle; selected chips float at the top; Done saves.
+  2. **Aroma chips in the note** — chips are grouped into Uncategorized/Aroma/Entry/Mid-palate/Finish sections; long-press calls up aroma edit mode (chips wiggle) and chips can be dragged into a section.
+  3. **Chip resizing** — two-finger pinch on/near a chip grows/shrinks it (aroma intensity); deleting via the ✕ shown in edit mode, with Undo.
+  4. **Cellar basics** — fragment search (type partial words, suggestions appear), long-press to select wines, racks (switch to Racks tab, assign wines), expanded card layout (Aromas → bottle controls → Racks).
+  5. **Tasting note flow** — date tabs on note cards, Overall Score and Value sliders, edit pencil on the note view.
+  6. **Wrap-up** — where Settings/Profile, backup and this tour's replay live.
+* **Implementation framework (suggested):**
+  1. **Tour engine (shared component):** a `TourOverlay` composable — full-screen scrim with a cut-out/highlight over a target's bounds (targets register their root bounds via `onGloballyPositioned`, the same technique already used for aroma chip drag drop-targets), caption card anchored near the target, Back/Next/Skip/Done controls. Pure state machine: `TourStep(id, screen, targetKey, title, body)`.
+  2. **Step registry:** steps declared per screen and filtered to those whose target exists (e.g. skip rack steps when no racks; skip chip steps until a note has aromas), so the tour adapts and never points at nothing.
+  3. **Persistence:** `tour_completed` / per-step progress in SharedPreferences (follow the existing `cellar_racks_v1` prefs pattern); app version bump re-offers only *new* steps, never the whole tour again.
+  4. **First-run gating:** show after the very first successful load; "Skip tour" always visible; replay from Profile resets progress. Consider a tiny sample/demo state so the aroma steps have a note with chips to point at, or gate those steps on the user creating their first note.
+  5. **Copy & design pass:** one sentence per stop, verb-first ("Pinch a chip to size it by intensity"); visual style follows existing floating surfaces (surface @ ~92% alpha, 4dp elevation).
+* **Open decisions for implementation time:** tour length (all stops at once vs per-screen mini-tours triggered on first visit to each screen — the latter is likely better), whether steps are interactive ("try it: long-press this chip") or passive, demo data vs gating on real content, and whether existing installs (owner) see it once or only via Replay.
+* **Owner instruction:** Record this feature only. Do not build it until the owner asks to work on W-068.
 
 ---
 

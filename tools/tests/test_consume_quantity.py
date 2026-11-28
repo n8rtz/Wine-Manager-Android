@@ -45,17 +45,21 @@ class CellarStockContractTests(unittest.TestCase):
         self.assertIn("fun addBottleToStock(bottleId: Long)", vm)
         self.assertIn("repository.addBottleToStock(bottleId)", vm)
 
-    def test_expanded_cellar_card_exposes_stock_add_note_and_edit_actions(self):
+    def test_expanded_cellar_card_exposes_stock_add_note_and_long_press_edit(self):
         cellar = CELLAR.read_text()
-        self.assertIn('text = "Stock: ${item.bottle.quantity}"', cellar)
+        self.assertIn('text = "Cellar: ${item.bottle.quantity}"', cellar)
         self.assertIn('contentDescription = "Consume one bottle"', cellar)
         self.assertIn('contentDescription = "Add one bottle"', cellar)
         self.assertIn("quantity = 1", cellar)
         self.assertIn("viewModel.addBottleToStock(item.bottle.bottleId)", cellar)
         self.assertIn('contentDescription = "Add tasting note"', cellar)
         self.assertIn("onAddNote(item.definition.definitionId, item.bottle.vintage)", cellar)
-        self.assertIn('contentDescription = "Edit wine"', cellar)
-        self.assertIn("onEditWine(item.bottle.bottleId)", cellar)
+        self.assertNotIn('contentDescription = "Edit wine"', cellar)
+        # Long-press now selects the wine and opens the Edit/Delete popup;
+        # Edit (single selection only) is what opens the editor.
+        self.assertIn("selectedWineIds = selectedWineIds + item.bottle.bottleId", cellar)
+        self.assertIn("wineMenuBottleId = item.bottle.bottleId", cellar)
+        self.assertIn("onEditWine(target)", cellar)
 
     def test_wine_edit_is_separate_from_the_removed_detail_and_consumption_flow(self):
         edit = EDIT.read_text()

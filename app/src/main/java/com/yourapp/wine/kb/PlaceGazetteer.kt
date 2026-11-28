@@ -6,6 +6,14 @@ class PlaceGazetteer(private val kb: WineKnowledgeBase) {
     private var indexedPlaces: List<Place>? = null
     private var root = Node()
 
+    companion object {
+        // The trie depends only on the places list instance. Several
+        // gazetteer instances over the same KB (extractor, producer
+        // repair, hybrid, fallbacks) used to each rebuild the whole
+        // trie on first use; share one built root per list instance.
+        private val sharedRoots = java.util.WeakHashMap<List<Place>, Node>()
+    }
+
     /** No image coordinates: boundary-aware known place forms tolerate OCR word breaks, not changed letters. */
     @Synchronized fun matches(normalizedText: String): List<Place> =
         matches(normalizedText, emptySet(), emptySet(), false)
@@ -18,18 +26,24 @@ class PlaceGazetteer(private val kb: WineKnowledgeBase) {
     ): List<Place> {
         val current = kb.places()
         if (current !== indexedPlaces) {
-            val updated = Node()
-            for (place in current) {
-                var node = updated
-                // Ignore OCR-inserted word breaks only inside verified geographic forms.
-                for (form in (listOf(place.name) + BundledOrigins.spellingForms(place)).distinct()) {
-                    node = updated
-                    com.yourapp.wine.merge.TextNorm.normalize(form).filter(Char::isLetterOrDigit)
-                        .forEach { char -> node = node.children.getOrPut(char) { Node() } }
-                    node.places += place
+            val shared = synchronized(sharedRoots) { sharedRoots[current] }
+            if (shared != null) {
+                root = shared; indexedPlaces = current
+            } else {
+                val updated = Node()
+                for (place in current) {
+                    var node = updated
+                    // Ignore OCR-inserted word breaks only inside verified geographic forms.
+                    for (form in (listOf(place.name) + BundledOrigins.spellingForms(place)).distinct()) {
+                        node = updated
+                        com.yourapp.wine.merge.TextNorm.normalize(form).filter(Char::isLetterOrDigit)
+                            .forEach { char -> node = node.children.getOrPut(char) { Node() } }
+                        node.places += place
+                    }
                 }
+                root = updated; indexedPlaces = current
+                synchronized(sharedRoots) { sharedRoots[current] = updated }
             }
-            root = updated; indexedPlaces = current
         }
         data class Match(val place:Place,val start:Int,val end:Int)
         val found = mutableListOf<Match>()

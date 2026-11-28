@@ -1,21 +1,37 @@
 package com.n8rtz.winetracker.ui.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -27,9 +43,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.n8rtz.winetracker.data.local.TastingNoteWithDefinition
 import com.n8rtz.winetracker.data.local.TastingPhase
 import com.n8rtz.winetracker.data.local.matchesAromaQuery
+import com.n8rtz.winetracker.data.local.scoreWineSearch
+import com.n8rtz.winetracker.data.local.searchDocument
 import com.n8rtz.winetracker.viewmodels.TastingNoteViewModel
 import com.n8rtz.winetracker.ui.components.LocationWheelPicker
 import com.n8rtz.winetracker.ui.components.FloatingSearchFilterControls
+import com.n8rtz.winetracker.ui.components.AromaChips
+import com.n8rtz.winetracker.ui.components.PhaseAromaCloud
+import com.n8rtz.winetracker.ui.components.ratingColor
+import com.n8rtz.winetracker.ui.components.SectionHeaderLine
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,7 +60,8 @@ import java.util.Locale
 @Composable
 fun TastingNotesScreen(
     tastingNoteViewModel: TastingNoteViewModel = viewModel(),
-    onNoteClick: (Long) -> Unit
+    onNoteClick: (Long) -> Unit,
+    onAddNote: (Long, String) -> Unit = { _, _ -> }
 ) {
     val history by tastingNoteViewModel.tastingNotes.collectAsState(initial = emptyList())
     
@@ -59,21 +82,52 @@ fun TastingNotesScreen(
     val filterState by tastingNoteViewModel.filterState.collectAsState()
     val locationData by tastingNoteViewModel.tastingNotesLocationData.collectAsState()
     val prices by tastingNoteViewModel.rankingsPrices.collectAsState()
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    // Tapping the search field expands it to the full row width.
+    var searchFieldFocused by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
-    var searchExpanded by remember { mutableStateOf(false) }
-    var expandedGroupKey by remember { mutableStateOf<Pair<Long, String>?>(null) }
+    var searchExpanded by rememberSaveable { mutableStateOf(false) }
+    // Saveable so returning from a note's detail restores the open card.
+    var expandedGroupId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var expandedGroupVintage by rememberSaveable { mutableStateOf<String?>(null) }
+    val expandedGroupKey: Pair<Long, String>? =
+        expandedGroupId?.let { id -> expandedGroupVintage?.let { vintage -> id to vintage } }
+    val wineNotesRequest by tastingNoteViewModel.wineNotesRequest.collectAsState()
     val isFilterActive = filterState.types.isNotEmpty() ||
             filterState.status != "All" ||
             filterState.country != null || filterState.region != null || filterState.subregion != null ||
             filterState.priceRange != null || filterState.aromaQuery.isNotBlank() || filterState.aromaPhase != null
 
-    val filteredHistory = remember(history, searchQuery, filterState, prices) {
+    // Precomputed fragment-search documents and scores (W-067): typing
+    // used to re-normalise every wine's fields on every keystroke (and
+    // again inside the sort comparator), which made search laggy.
+    // Built lazily: with no query there is nothing to score, so entering
+    // the screen (e.g. mid tab-slide) skips normalising every wine; the
+    // documents are built once when the first query character arrives
+    // and reused for every keystroke after that.
+    val notesSearchDocuments = remember(history, searchQuery.isBlank()) {
+        if (searchQuery.isBlank()) {
+            emptyMap()
+        } else {
+            history.associate { it.note.noteId to it.definition.searchDocument(it.note.vintage) }
+        }
+    }
+    val notesSearchScores = remember(history, searchQuery, notesSearchDocuments) {
+        if (searchQuery.isBlank()) {
+            emptyMap()
+        } else {
+            history.mapNotNull { item ->
+                val document = notesSearchDocuments[item.note.noteId]
+                    ?: item.definition.searchDocument(item.note.vintage)
+                scoreWineSearch(searchQuery, document)?.let { item.note.noteId to it }
+            }.toMap()
+        }
+    }
+
+    val filteredHistory = remember(history, searchQuery, filterState, prices, notesSearchScores) {
         history.filter { item ->
-            val matchesSearch = searchQuery.isBlank() ||
-                    item.definition.maker.contains(searchQuery, ignoreCase = true) ||
-                    item.definition.name.contains(searchQuery, ignoreCase = true) ||
-                    com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage).contains(searchQuery, ignoreCase = true)
+            // Fragment search (W-067), scored once above.
+            val matchesSearch = searchQuery.isBlank() || notesSearchScores.containsKey(item.note.noteId)
 
             val matchesType = filterState.types.isEmpty() || item.definition.type in filterState.types
             
@@ -102,6 +156,12 @@ fun TastingNotesScreen(
             matchesSearch && matchesType && matchesStatus && matchesPrice &&
                     matchesCountry && matchesRegion && matchesSubregion && matchesAroma
         }.sortedWith { a, b ->
+            // While searching, best fragment match first.
+            if (searchQuery.isNotBlank()) {
+                val scoreA = notesSearchScores[a.note.noteId] ?: Int.MAX_VALUE
+                val scoreB = notesSearchScores[b.note.noteId] ?: Int.MAX_VALUE
+                if (scoreA != scoreB) return@sortedWith scoreA.compareTo(scoreB)
+            }
             val priceA = prices[Pair(a.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(a.note.vintage))] ?: 0.0
             val priceB = prices[Pair(b.note.definitionId, com.n8rtz.winetracker.data.local.displayVintage(b.note.vintage))] ?: 0.0
             when (filterState.sortOrder) {
@@ -113,10 +173,8 @@ fun TastingNotesScreen(
         }
     }
 
-    // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
-    // screen where it was scrolled to instead of at the top.
-    val notesListState = remember { LazyListState() }
-    LaunchedEffect(Unit) { notesListState.scrollToItem(0) }
+    // Saveable so returning from a note's detail restores the scroll spot.
+    val notesListState = rememberLazyListState()
     // The restored top search row scrolls away with the list; the compact controls appear once
     // both the title and the search row are out of view, and stay visible while scrolling.
     val showCompactControls by remember {
@@ -132,6 +190,30 @@ fun TastingNotesScreen(
     val groupedHistory = remember(filteredHistory) {
         filteredHistory.groupBy { it.note.definitionId to com.n8rtz.winetracker.data.local.displayVintage(it.note.vintage) }
             .values.toList()
+    }
+
+    LaunchedEffect(wineNotesRequest) {
+        if (wineNotesRequest != null) {
+            searchQuery = ""
+            showFilterSheet = false
+            tastingNoteViewModel.updateFilterState(TastingNotesFilterState())
+        }
+    }
+    LaunchedEffect(wineNotesRequest, groupedHistory, searchQuery, filterState) {
+        val request = wineNotesRequest ?: return@LaunchedEffect
+        if (searchQuery.isNotBlank() || filterState != TastingNotesFilterState()) return@LaunchedEffect
+        val targetVintage = com.n8rtz.winetracker.data.local.displayVintage(request.vintage)
+        val targetIndex = groupedHistory.indexOfFirst { group ->
+            val note = group.first().note
+            note.definitionId == request.definitionId &&
+                com.n8rtz.winetracker.data.local.displayVintage(note.vintage) == targetVintage
+        }
+        if (targetIndex >= 0) {
+            expandedGroupId = request.definitionId
+            expandedGroupVintage = targetVintage
+            notesListState.scrollToItem(targetIndex + 2)
+            tastingNoteViewModel.consumeWineTastingNotesRequest(request.requestId)
+        }
     }
 
     val listDateFormat = remember { java.text.SimpleDateFormat("M/d/yy", java.util.Locale.getDefault()) }
@@ -151,6 +233,7 @@ fun TastingNotesScreen(
                 )
             }
             item(key = "notes_search") {
+                Column {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -158,7 +241,9 @@ fun TastingNotesScreen(
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { searchFieldFocused = it.isFocused },
                         placeholder = { Text("Search", maxLines = 1) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                         trailingIcon = {
@@ -175,17 +260,35 @@ fun TastingNotesScreen(
                             focusedContainerColor = MaterialTheme.colorScheme.surface
                         )
                     )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { showFilterSheet = true },
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    AnimatedVisibility(
+                        visible = !searchFieldFocused,
+                        enter = fadeIn() + expandHorizontally(),
+                        exit = fadeOut() + shrinkHorizontally()
                     ) {
-                        Icon(
-                            Icons.Default.Tune,
-                            contentDescription = "Filter Notes",
-                            tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { showFilterSheet = true },
+                                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Icon(
+                                    Icons.Default.Tune,
+                                    contentDescription = "Filter Notes",
+                                    tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
+                }
+                Text(
+                    text = "Showing ${groupedHistory.size} " +
+                        "${if (groupedHistory.size == 1) "wine" else "wines"} " +
+                        "(${filteredHistory.size} tasting " +
+                        "${if (filteredHistory.size == 1) "note" else "notes"})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                )
                 }
             }
             if (groupedHistory.isEmpty()) {
@@ -213,10 +316,20 @@ fun TastingNotesScreen(
                         rating = ratingsMap[groupKey],
                         listDateFormat = listDateFormat,
                         onExpandToggle = {
-                            expandedGroupKey = if (expandedGroupKey == groupKey) null else groupKey
+                            if (expandedGroupKey == groupKey) {
+                                expandedGroupId = null
+                                expandedGroupVintage = null
+                            } else {
+                                expandedGroupId = groupKey.first
+                                expandedGroupVintage = groupKey.second
+                            }
                         },
                         price = prices[groupKey],
-                        onNoteClick = onNoteClick
+                        onNoteClick = onNoteClick,
+                        onAddNote = onAddNote,
+                        onAromaIntensityChange = { noteId, descriptorId, phase, intensity ->
+                            tastingNoteViewModel.updateAromaIntensity(noteId, descriptorId, phase, intensity)
+                        }
                     )
                 }
             }
@@ -251,6 +364,7 @@ fun TastingNotesScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompactNoteItem(
     group: List<TastingNoteWithDefinition>,
@@ -259,60 +373,250 @@ fun CompactNoteItem(
     listDateFormat: java.text.SimpleDateFormat,
     price: Double?,
     onExpandToggle: () -> Unit,
-    onNoteClick: (Long) -> Unit
+    onNoteClick: (Long) -> Unit,
+    onAromaIntensityChange: (Long, String, TastingPhase, Float?) -> Unit,
+    onAddNote: (Long, String) -> Unit = { _, _ -> }
 ) {
     val firstItem = group.first()
     val latestNoteId = remember(group) {
         group.maxByOrNull { it.note.dateTasted }?.note?.noteId ?: firstItem.note.noteId
     }
+    // Bottom row of the card: the most recent note's date, MM/dd/yyyy.
+    val bottomDateFormat = remember { java.text.SimpleDateFormat("MM/dd/yyyy", java.util.Locale.US) }
+    val mostRecentNoteDate = remember(group) {
+        group.maxByOrNull { it.note.dateTasted }?.note?.dateTasted
+    }
     com.n8rtz.winetracker.ui.components.WineCard(
-        title = run {
-            "${firstItem.definition.maker} - ${firstItem.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage)})"
-        },
-        subtitle = run {
-            val validSub = firstItem.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-            val validRegion = firstItem.definition.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-            val validCountry = firstItem.definition.country?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-            listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
-        },
+        producer = firstItem.definition.maker,
+        wineName = firstItem.definition.name,
+        vintage = com.n8rtz.winetracker.data.local.displayVintage(firstItem.note.vintage),
+        subregion = firstItem.definition.subregion,
+        region = firstItem.definition.region,
+        country = firstItem.definition.country,
         type = firstItem.definition.type,
         metadata = if (price != null && price > 0.0) "$${"%.2f".format(price)}" else "",
         imageUrl = firstItem.definition.imageUrl.takeIf { firstItem.imageAsset == null },
         imageLocalPath = firstItem.imageAsset?.relativePath,
         rating = rating,
+        dateAdded = mostRecentNoteDate?.let { bottomDateFormat.format(Date(it)) },
         isExpanded = expanded,
         onExpandToggle = onExpandToggle,
-        onClick = { onNoteClick(latestNoteId) },
+        onClick = onExpandToggle,
         details = {
-            Column(modifier = Modifier.padding(top = 8.dp)) {
-                group.sortedByDescending { it.note.dateTasted }.forEach { item ->
-                    val dateStr = listDateFormat.format(java.util.Date(item.note.dateTasted))
-                    Column(
+            val orderedGroup = remember(group) { group.sortedByDescending { it.note.dateTasted } }
+            var selectedNoteId by rememberSaveable(orderedGroup.first().note.noteId) {
+                mutableStateOf(orderedGroup.first().note.noteId)
+            }
+            val selectedIndex = orderedGroup.indexOfFirst { it.note.noteId == selectedNoteId }.coerceAtLeast(0)
+            val selectedNote = orderedGroup[selectedIndex]
+            Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Date tabs sit directly on the note body: the open tab
+                // shares the body's colour (and square bottom corners) so
+                // the two connect; closed tabs are a fainter shade. No
+                // underline indicator.
+                Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onNoteClick(item.note.noteId) }
-                            .padding(vertical = 4.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.Bottom
                     ) {
-                        Text(
-                            text = "$dateStr - ${item.note.notes ?: "No notes written..."}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (item.note.notes.isNullOrBlank()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                        )
-                        if (!item.note.recommendedBy.isNullOrBlank()) {
-                            Text(
-                                "Recommended by ${item.note.recommendedBy}",
-                                style = MaterialTheme.typography.bodySmall
+                        orderedGroup.forEachIndexed { index, item ->
+                            val isSelected = selectedIndex == index
+                            Box(
+                                modifier = Modifier
+                                    .height(32.dp)
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
+                                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                                        RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+                                    )
+                                    .clickable { selectedNoteId = item.note.noteId }
+                                    .padding(horizontal = 12.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    listDateFormat.format(Date(item.note.dateTasted)),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
+                            Spacer(Modifier.width(2.dp))
+                        }
+                        // Narrow "+" tab: add another note for this wine.
+                        Box(
+                            modifier = Modifier
+                                .size(width = 40.dp, height = 32.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                                    RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+                                )
+                                .clickable { onAddNote(firstItem.note.definitionId, firstItem.note.vintage) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = "Add a tasting note for this wine",
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                        item.note.reviewerRating?.let { reviewerRating ->
-                            Text("Rating: $reviewerRating", style = MaterialTheme.typography.bodySmall)
+                    }
+                    AnimatedContent(
+                        targetState = selectedIndex,
+                        transitionSpec = {
+                            // Slide in the direction of travel, cross-fading,
+                            // so switching date tabs feels like paging.
+                            val direction = if (targetState > initialState) 1 else -1
+                            (slideInHorizontally { width -> direction * width / 3 } + fadeIn()) togetherWith
+                                (slideOutHorizontally { width -> -direction * width / 3 } + fadeOut())
+                        },
+                        label = "tastingNoteTabTransition",
+                        modifier = Modifier.fillMaxWidth()
+                    ) { animatedIndex ->
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNoteClick(selectedNote.note.noteId) }
+                            .pointerInput(selectedIndex, orderedGroup.size) {
+                            var dragTotal = 0f
+                            detectHorizontalDragGestures(
+                                onDragStart = { dragTotal = 0f },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    dragTotal += dragAmount
+                                    change.consume()
+                                },
+                                onDragEnd = {
+                                    val threshold = 48.dp.toPx()
+                                    when {
+                                        dragTotal <= -threshold && selectedIndex < orderedGroup.lastIndex ->
+                                            selectedNoteId = orderedGroup[selectedIndex + 1].note.noteId
+                                        dragTotal >= threshold && selectedIndex > 0 ->
+                                            selectedNoteId = orderedGroup[selectedIndex - 1].note.noteId
+                                    }
+                                },
+                                onDragCancel = { dragTotal = 0f }
+                            )
+                            },
+                        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 8.dp, bottomEnd = 8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.32f)
+                    ) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                        val selectedNote = orderedGroup[animatedIndex.coerceIn(0, orderedGroup.lastIndex)]
+                        // Rating is the focal point: a large colour-banded
+                        // badge (same stepped colours as elsewhere) with the
+                        // score big and bold, not plain text.
+                        val ratingValue = selectedNote.note.rating.takeIf { it > 0.0 }?.toInt()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.padding(bottom = 2.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        if (ratingValue != null) ratingColor(ratingValue) else Color(0xFF9E9E9E),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(horizontal = 14.dp, vertical = 5.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    ratingValue?.toString() ?: "NR",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
+                            Column {
+                                Text(
+                                    "MY RATING",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    if (ratingValue != null) "out of 100 points" else "Not rated yet",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
-                        item.note.valueScore?.let { valueScore ->
-                            Text("Value: $valueScore/10", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            selectedNote.note.notes?.takeIf { it.isNotBlank() } ?: "No written notes",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (selectedNote.note.notes.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                        )
+                        val sensory = selectedNote.note.sensoryData
+                        val aromaObservations = sensory?.aromaObservations.orEmpty()
+                        if (aromaObservations.isEmpty()) {
+                            // Legacy flat aromas have no phase/intensity data to resize; retain their chips as-is.
+                            AromaChips(sensory?.aromas.orEmpty())
+                        } else {
+                            TastingPhase.values().forEach { phase ->
+                                val phaseObservations = aromaObservations.filter { it.phase == phase }
+                                if (phaseObservations.isNotEmpty()) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        SectionHeaderLine(phase.label)
+                                        PhaseAromaCloud(
+                                            phase = phase,
+                                            observations = phaseObservations,
+                                            maxChipLines = 2,
+                                            onIntensityChange = { descriptorId, updatedPhase, intensity ->
+                                                onAromaIntensityChange(
+                                                    selectedNote.note.noteId, descriptorId, updatedPhase, intensity
+                                                )
+                                            },
+                                            onRemove = { _, _ -> },
+                                            readOnly = true,
+                                            allowIntensityAdjustment = true
+                                        )
+                                    }
+                                }
+                            }
                         }
-                        item.note.price?.let { notePrice ->
-                            Text("Price: $${"%.2f".format(notePrice)}", style = MaterialTheme.typography.bodySmall)
+                        if (selectedNote.note.valueScore != null &&
+                            (aromaObservations.isNotEmpty() || sensory?.aromas?.isNotEmpty() == true)
+                        ) {
+                            HorizontalDivider()
                         }
+                        selectedNote.note.recommendedBy?.takeIf { it.isNotBlank() }?.let {
+                            Text("Recommended by $it", style = MaterialTheme.typography.bodySmall)
+                        }
+                        selectedNote.note.reviewerRating?.let { Text("Reviewer rating: $it", style = MaterialTheme.typography.bodySmall) }
+                        selectedNote.note.valueScore?.let { value ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Value", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                        verticalAlignment = Alignment.Bottom
+                                    ) {
+                                        Text(
+                                            value.toString(),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text("/10", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
+                            }
+                        }
+                        selectedNote.note.price?.let { Text("Price: $${"%.2f".format(it)}", style = MaterialTheme.typography.bodySmall) }
+                    }
+                    }
                     }
                 }
             }

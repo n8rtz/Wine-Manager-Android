@@ -96,4 +96,8 @@ object AromaWheelTheme {
 
     /** Saturated colour for a group id: handy for chips and list swatches elsewhere in your app. */
     fun groupColor(groupId: String?): Int = forGroup(groupId)?.main ?: fallback
+
+    /** Colour the wheel paints a descriptor when it is selected: chip colour. */
+    fun groupSelectedColor(groupId: String?): Int =
+        forGroup(groupId)?.let { selectedFill(it) } ?: fallback
 }

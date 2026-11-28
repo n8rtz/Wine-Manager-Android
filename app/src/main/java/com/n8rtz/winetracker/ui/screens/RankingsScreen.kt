@@ -1,6 +1,11 @@
 package com.n8rtz.winetracker.ui.screens
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -43,6 +49,8 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
     val searchQuery by viewModel.rankingsSearchQuery.collectAsState()
     var showFilterSheet by remember { mutableStateOf(false) }
     var searchExpanded by remember { mutableStateOf(false) }
+    // Tapping the search field expands it to the full row width.
+    var searchFieldFocused by remember { mutableStateOf(false) }
     // Not saveable: Compose Navigation restores tab state, so a saved list state would reopen this
     // screen where it was scrolled to instead of at the top.
     val rankingsListState = remember { LazyListState() }
@@ -78,6 +86,7 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                 )
             }
             item(key = "rankings_search") {
+                Column {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -85,7 +94,9 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.updateRankingsSearchQuery(it) },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { searchFieldFocused = it.isFocused },
                         placeholder = { Text("Search", maxLines = 1) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
                         trailingIcon = {
@@ -102,19 +113,28 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                             focusedContainerColor = MaterialTheme.colorScheme.surface
                         )
                     )
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { showFilterSheet = true },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                    AnimatedVisibility(
+                        visible = !searchFieldFocused,
+                        enter = fadeIn() + expandHorizontally(),
+                        exit = fadeOut() + shrinkHorizontally()
                     ) {
-                        Icon(
-                            Icons.Default.Tune,
-                            "Filter & Sort",
-                            tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { showFilterSheet = true },
+                                colors = IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.Tune,
+                                    "Filter & Sort",
+                                    tint = if (isFilterActive) Color(0xFF722F37) else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
+                }
                 }
             }
             if (rankedWines.isEmpty()) {
@@ -125,15 +145,12 @@ fun RankingsScreen(viewModel: RankingsViewModel) {
                 items(rankedWines, key = { it.item.note.noteId }) { displayItem ->
                     val item = displayItem.item
                     WineCard(
-                        title = run {
-                            "${item.definition.maker} - ${item.definition.name} (${com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage)})"
-                        },
-                        subtitle = run {
-                            val validSub = item.definition.subregion?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                            val validRegion = item.definition.region?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                            val validCountry = item.definition.country?.takeIf { it.isNotBlank() && it.lowercase() != "null" }
-                            listOfNotNull(validSub, validRegion, validCountry).joinToString(", ")
-                        },
+                        producer = item.definition.maker,
+                        wineName = item.definition.name,
+                        vintage = com.n8rtz.winetracker.data.local.displayVintage(item.note.vintage),
+                        subregion = item.definition.subregion,
+                        region = item.definition.region,
+                        country = item.definition.country,
                         type = item.definition.type,
                         metadata = displayItem.priceStr,
                         imageUrl = item.definition.imageUrl.takeIf { item.imageAsset == null },
