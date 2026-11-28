@@ -422,9 +422,17 @@ internal object GlinerLabRunner {
         // work_ms is extractor + hybrid time. Surfacing it splits the
         // EVIDENCE stage into extraction vs the spatial resolver tail
         // (phrase proposals, producer/wine resolution, near-match).
-        val extractMs=journal.rows.filter { it["stage"]=="gliner_evidence_summary" }
-            .firstOrNull()?.get("evidence_extract_ms")?.toLongOrNull() ?: 0L
+        val evidenceRow=journal.rows.filter { it["stage"]=="gliner_evidence_summary" }.firstOrNull()
+        val extractMs=evidenceRow?.get("evidence_extract_ms")?.toLongOrNull() ?: 0L
         if(extractMs>0) detailStages += ScanStageTiming(ScanStage.EVIDENCE_EXTRACT,extractMs)
+        val hybridMs=evidenceRow?.get("evidence_hybrid_ms")?.toLongOrNull() ?: 0L
+        if(hybridMs>0) detailStages += ScanStageTiming(ScanStage.EVIDENCE_HYBRID,hybridMs)
+        // Whatever of the EVIDENCE stage is not extraction, hybrid or
+        // gazetteer lookups is the spatial tail: phrase proposals,
+        // resolver glue, completion/near-match sections, journal work.
+        val evidenceMs=detailStages.lastOrNull { it.stage==ScanStage.EVIDENCE }?.ms ?: 0L
+        val tailMs=(evidenceMs-extractMs-hybridMs-lookupMs).coerceAtLeast(0)
+        if(tailMs>0) detailStages += ScanStageTiming(ScanStage.SPATIAL_TAIL,tailMs)
         val valuesFound=PhoneCorpusMath.fields.count { fields[it].orEmpty().isNotBlank() }
         return PostOutcome(fields,states,if(failed) "failed" else "complete",
             if(failed) "Post-processing failed" else "$valuesFound/6 fields suggested before GLiNER field decisions",

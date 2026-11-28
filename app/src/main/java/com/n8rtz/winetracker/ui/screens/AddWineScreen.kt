@@ -1158,6 +1158,8 @@ private fun scanStageLabel(stage: com.yourapp.wine.diagnostics.ScanStage): Strin
     com.yourapp.wine.diagnostics.ScanStage.EVIDENCE_SETUP -> "Evidence setup (indexes)"
     com.yourapp.wine.diagnostics.ScanStage.PRODUCER_LOOKUPS -> "Producer/wine lookups (in evidence)"
     com.yourapp.wine.diagnostics.ScanStage.EVIDENCE_EXTRACT -> "Evidence extraction (in evidence)"
+    com.yourapp.wine.diagnostics.ScanStage.EVIDENCE_HYBRID -> "Evidence hybrid merge (in evidence)"
+    com.yourapp.wine.diagnostics.ScanStage.SPATIAL_TAIL -> "Spatial phrases & tail (in evidence)"
     com.yourapp.wine.diagnostics.ScanStage.WARM_SESSION -> "Reader pickup"
     com.yourapp.wine.diagnostics.ScanStage.FIELD_ADAPTER -> "Field mapping"
 }

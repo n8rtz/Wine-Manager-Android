@@ -160,6 +160,11 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         # (no deadline) keep the extractor default.
         self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=5_000L', runner)
         self.assertIn('ScanStage.EVIDENCE_EXTRACT,extractMs', runner)
+        self.assertIn('ScanStage.SPATIAL_TAIL,tailMs', runner)
+        spatial_src = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
+        # One shared completion gazetteer, not one per candidate.
+        self.assertIn('val completionGazetteer=engine?.let', spatial_src)
+        self.assertNotIn('engine?.let { e -> com.yourapp.wine.kb.PlaceGazetteer(', spatial_src)
         # A failed evidence summary (budget cap) must fall back to the
         # base fill summary, never fail the scan.
         self.assertIn('spatialSummary["status"]!="failed") spatialSummary', runner)
