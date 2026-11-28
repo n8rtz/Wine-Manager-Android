@@ -64,42 +64,38 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         self.assertGreaterEqual(session.count('warmUp(app)'),2)
         self.assertIn('GlinerScanWarmup.discard()',session)
 
-    def test_ocr_crops_to_detected_text_before_reading(self):
+    def test_ocr_reads_full_frame_with_detector_regions(self):
         ocr=self.text(GL/'GlinerOcr.kt')
         runner=self.text(GL/'GlinerLabRunner.kt')
         scanner=self.text(GL/'GlinerProductionScanner.kt')
-        # Detection runs first and its regions define the crop; the
-        # detector is not run a second time for the recognizer.
+        # Detection runs first and its regions drive the line recognizer;
+        # the detector is not run a second time for the recognizer.
         self.assertLess(ocr.index('detectRegions(context,bitmap,workspace,spec)'),
-                        ocr.index('readMlKit(ocrBitmap,deadline)'))
-        self.assertIn('val crop=textRegionCrop(detection,bitmap.width,bitmap.height)',ocr)
-        self.assertIn('Bitmap.createBitmap(bitmap,crop[0],crop[1],crop[2],crop[3])',ocr)
+                        ocr.index('readMlKit(bitmap,deadline)'))
         self.assertEqual(ocr.count('PaddleTextDetector.detect'),1)
-        # Both engines read the crop; Paddle regions are shifted into
-        # crop coordinates rather than re-detected.
-        self.assertIn('readPaddle(context,ocrBitmap,workspace,spec,deadlineAtMs,regions)',ocr)
-        self.assertIn('PointF(point.x-crop[0],point.y-crop[1])',ocr)
-        # Cropping is skipped when text spans the frame or is a speck.
-        self.assertIn('if(areaFraction>0.92 || areaFraction<0.03) return null',ocr)
-        self.assertIn('val marginX=unionW*0.10f',ocr)
+        # Both engines read the full photo. ML Kit must see lines the
+        # detector missed: a text-region crop amputated exactly those
+        # lines and jittered the rest (lab A/B), costing fields.
+        self.assertIn('val regions=detection.regions.lines',ocr)
+        self.assertIn('readPaddle(context,bitmap,workspace,spec,deadlineAtMs,regions)',ocr)
+        self.assertNotIn('textRegionCrop',ocr)
+        self.assertNotIn('Bitmap.createBitmap(bitmap,crop[0]',ocr)
+        self.assertIn('"full frame"',ocr)
         # Diagnostics say which path a scan actually took.
         self.assertIn('croppedToTextRegion=ocr.croppedToTextRegion',runner)
         self.assertIn('if(result.croppedToTextRegion) "text_region_crop" else "full_photo_gliner"',scanner)
 
-    def test_crop_releases_full_bitmap_so_recognizer_warp_fits_workspace(self):
+    def test_paddle_sessions_stay_open_across_photos(self):
         ocr=self.text(GL/'GlinerOcr.kt')
-        workspace=self.text(APP/'com/yourapp/wine/capture/BitmapWorkspace.kt')
-        # The workspace never allows more than two owned bitmaps: after
-        # decode (1) + crop (2) the recognizer's warp needs a free slot.
-        self.assertIn('owned.size >= 2',workspace)
-        self.assertIn('require(owned.size < 2',workspace)
-        # recognize() frees the full-size bitmap once the crop exists and
-        # before either engine reads; keeping it owned made every warp
-        # throw under a crop and silently left PP-OCRv6 with zero lines.
-        release=ocr.index('if(crop!=null) workspace.release(bitmap)')
-        self.assertLess(ocr.index('Bitmap.createBitmap(bitmap,crop[0],crop[1],crop[2],crop[3])'),release)
-        self.assertLess(release,ocr.index('readMlKit(ocrBitmap,deadline)'))
-        self.assertLess(release,ocr.index('readPaddle(context,ocrBitmap,workspace,spec,deadlineAtMs,regions)'))
+        warmup=self.text(GL/'GlinerScanWarmup.kt')
+        # Release+reopen per photo re-hashed ~138 MB of model files and
+        # re-created both ONNX sessions every photo (~1 s/photo in the lab
+        # A/B) with identical outputs; the warm-up pre-creates the
+        # sessions precisely so scans reuse them instead.
+        self.assertNotIn('PaddleTextDetector.release',ocr)
+        self.assertNotIn('PaddleTextRecognizer.release',ocr)
+        self.assertIn('PaddleTextDetector.warm(app, gate, spec)',warmup)
+        self.assertIn('PaddleTextRecognizer.warm(app, gate, spec)',warmup)
         # A systematic Paddle failure must show in the outcome note, not
         # read as a silent "0 lines".
         self.assertIn('var firstError:String?=null',ocr)
