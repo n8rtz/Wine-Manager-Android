@@ -110,6 +110,8 @@ internal data class GlinerLabState(
     val priorRunVariant:String="",
     val priorAggregate:GlinerAggregate?=null,
     val priorMeanTotalMs:Long=0,
+    /** Per-image rows of the prior run, retained so the scoreboard can rescore it on the photos the current run has finished (head-to-head). */
+    val priorSamples:List<GlinerLabRow> = emptyList(),
     /** Time to make the bundle files readable (asset copy or import check), in milliseconds. */
     val bundleMs:Long=0,
     /** Time to parse the tokenizer and create the ONNX session, in milliseconds. */
@@ -121,6 +123,33 @@ internal data class GlinerLabState(
 ) {
     val ran:Boolean get() = samples.any { it.result!=null }
     val customRan:Boolean get() = customSamples.any { it.result!=null }
+
+    /** Corpus photos the current run has scored so far. */
+    val completedImages:Set<String> get() =
+        samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet()
+
+    /**
+     * The prior run rescored on exactly the photos the current run has
+     * finished, so mid-run the scoreboard compares like with like
+     * instead of a partial current run against the prior's full corpus.
+     * Null when there is nothing to match yet (no prior rows retained,
+     * or the current run has not finished any photo the prior scored).
+     */
+    val priorMatchedAggregate:GlinerAggregate? get() {
+        if(priorSamples.isEmpty()) return null
+        val done=completedImages
+        if(done.isEmpty()) return null
+        val matched=priorSamples.filter { it.sample.image in done }
+        return if(matched.any { it.result!=null }) aggregateGlinerRows(matched,stopped=false) else null
+    }
+
+    /** Mean total ms of the prior run over the same matched photos. */
+    val priorMatchedMeanTotalMs:Long get() {
+        if(priorSamples.isEmpty()) return 0L
+        val done=completedImages
+        val times=priorSamples.filter { it.sample.image in done }.mapNotNull { it.result?.totalMs }
+        return if(times.isEmpty()) 0L else times.average().toLong()
+    }
     fun row(image:String):GlinerLabRow? = (samples+customSamples).firstOrNull { it.sample.image==image }
 }
 
@@ -760,6 +789,7 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
                 priorAggregate=if(custom || state.aggregate==null) state.priorAggregate else state.aggregate,
                 priorMeanTotalMs=if(custom || state.aggregate==null) state.priorMeanTotalMs else
                     state.samples.mapNotNull { it.result?.totalMs }.takeIf { it.isNotEmpty() }?.average()?.toLong() ?: 0L,
+                priorSamples=if(custom || state.aggregate==null) state.priorSamples else state.samples,
                 aggregate=if(custom) state.aggregate else null,message="",
                 runStartedMs=SystemClock.elapsedRealtime(),firstResultMs=0,runElapsedMs=0,
                 samples=if(custom) state.samples else state.samples.map { row ->

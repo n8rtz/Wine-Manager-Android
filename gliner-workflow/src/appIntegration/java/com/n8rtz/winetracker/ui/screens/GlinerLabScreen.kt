@@ -198,11 +198,15 @@ internal fun GlinerLabScreen(
         // personal batch must not push these always-available tables out of reach.
         item(key="curated_scores") {
             SelectionContainer {
+                val matchedPrior=state.priorMatchedAggregate
                 ScoredResults(state.aggregate ?: aggregateGlinerRows(state.samples,state.stopped),labState,
-                    state.samples.filter { it.sample.included && it.result!=null }.map { it.sample.image }.toSet(),
-                    variant=state.runVariant,priorVariant=state.priorRunVariant,prior=state.priorAggregate,
+                    state.completedImages,
+                    variant=state.runVariant,
+                    priorVariant=state.priorRunVariant+
+                        if(matchedPrior!=null && matchedPrior.attempted<(state.priorAggregate?.attempted ?: 0)) " · same photos" else "",
+                    prior=matchedPrior ?: state.priorAggregate,
                     meanTotalMs=state.samples.mapNotNull { it.result?.totalMs }.takeIf { it.isNotEmpty() }?.average()?.toLong() ?: 0L,
-                    priorMeanTotalMs=state.priorMeanTotalMs)
+                    priorMeanTotalMs=if(matchedPrior!=null) state.priorMatchedMeanTotalMs else state.priorMeanTotalMs)
             }
         }
         item(key="custom_heading") {

@@ -465,6 +465,24 @@ class GlinerBundleInspectTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("not one of the app's accepted layouts", result.stdout + result.stderr)
 
+    def test_prior_run_is_rescored_on_completed_photos_while_running(self):
+        view_model = self.read(ADAPTER / "com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt")
+        screen = self.read(ADAPTER / "com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt")
+        # Starting a run retains the prior run's per-image rows, not just
+        # its aggregate, so the scoreboard can rescore it mid-run on
+        # exactly the photos the current run has finished.
+        self.assertIn("val priorSamples:List<GlinerLabRow>", view_model)
+        self.assertIn("priorSamples=if(custom || state.aggregate==null) state.priorSamples else state.samples", view_model)
+        self.assertIn("val priorMatchedAggregate:GlinerAggregate? get()", view_model)
+        self.assertIn("aggregateGlinerRows(matched,stopped=false)", view_model)
+        self.assertIn("val priorMatchedMeanTotalMs:Long get()", view_model)
+        # The scoreboard prefers the matched (same-photos) prior row and
+        # labels it as such until it covers the prior's full corpus.
+        self.assertIn("val matchedPrior=state.priorMatchedAggregate", screen)
+        self.assertIn("prior=matchedPrior ?: state.priorAggregate", screen)
+        self.assertIn('" · same photos"', screen)
+        self.assertIn("priorMeanTotalMs=if(matchedPrior!=null) state.priorMatchedMeanTotalMs else state.priorMeanTotalMs", screen)
+
 
 def build_synthetic_bundle(folder, int4=True, classes=3):
     """Writes a contract-compatible toy bundle: six inputs, one float output, INT4 node optional."""
