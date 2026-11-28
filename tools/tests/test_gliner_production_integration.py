@@ -86,6 +86,25 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         self.assertIn('croppedToTextRegion=ocr.croppedToTextRegion',runner)
         self.assertIn('if(result.croppedToTextRegion) "text_region_crop" else "full_photo_gliner"',scanner)
 
+    def test_crop_releases_full_bitmap_so_recognizer_warp_fits_workspace(self):
+        ocr=self.text(GL/'GlinerOcr.kt')
+        workspace=self.text(APP/'com/yourapp/wine/capture/BitmapWorkspace.kt')
+        # The workspace never allows more than two owned bitmaps: after
+        # decode (1) + crop (2) the recognizer's warp needs a free slot.
+        self.assertIn('owned.size >= 2',workspace)
+        self.assertIn('require(owned.size < 2',workspace)
+        # recognize() frees the full-size bitmap once the crop exists and
+        # before either engine reads; keeping it owned made every warp
+        # throw under a crop and silently left PP-OCRv6 with zero lines.
+        release=ocr.index('if(crop!=null) workspace.release(bitmap)')
+        self.assertLess(ocr.index('Bitmap.createBitmap(bitmap,crop[0],crop[1],crop[2],crop[3])'),release)
+        self.assertLess(release,ocr.index('readMlKit(ocrBitmap,deadline)'))
+        self.assertLess(release,ocr.index('readPaddle(context,ocrBitmap,workspace,spec,deadlineAtMs,regions)'))
+        # A systematic Paddle failure must show in the outcome note, not
+        # read as a silent "0 lines".
+        self.assertIn('var firstError:String?=null',ocr)
+        self.assertIn('" · paddle: $it"',ocr)
+
     def test_normal_review_does_not_add_model_specific_ui(self):
         adapter=self.text(GL/'GlinerProductionAdapter.kt')
         router=self.text(APP/'com/yourapp/wine/capture/ProductionLabelScanner.kt')

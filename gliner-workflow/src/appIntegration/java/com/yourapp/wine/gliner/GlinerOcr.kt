@@ -92,11 +92,20 @@ internal object GlinerOcr {
                     // crop coordinates, drive the line recognizer.
                     val detection=detectRegions(context,bitmap,workspace,spec)
                     val crop=textRegionCrop(detection,bitmap.width,bitmap.height)
+                    val photoWidth=bitmap.width
+                    val photoHeight=bitmap.height
                     val ocrBitmap=if(crop!=null) workspace.own(Bitmap.createBitmap(bitmap,crop[0],crop[1],crop[2],crop[3])) else bitmap
+                    // The crop holds every pixel either engine still needs, so
+                    // release the full-size bitmap: BitmapWorkspace allows at
+                    // most two owned bitmaps, and the line recognizer's warp
+                    // (workspace.create) needs the second slot. Leaving the
+                    // full bitmap owned made every warp throw under a crop,
+                    // silently leaving PP-OCRv6 with zero lines.
+                    if(crop!=null) workspace.release(bitmap)
                     val regions=detection.regions.lines.map { region ->
                         if(crop==null) region else region.copy(quadBase=region.quadBase.map { point -> PointF(point.x-crop[0],point.y-crop[1]) })
                     }
-                    val (mlKitReadings,paddleReadings)=coroutineScope {
+                    val (mlKitReadings,paddleResult)=coroutineScope {
                         val mlkit=async(Dispatchers.Default) { readMlKit(ocrBitmap,deadline) }
                         val paddle=async(Dispatchers.Default) { readPaddle(context,ocrBitmap,workspace,spec,deadlineAtMs,regions) }
                         val first=mlkit.await()
@@ -105,12 +114,15 @@ internal object GlinerOcr {
                         if(!paddle.isCompleted) onStage(LabelScanProgressStep.CHECK_READ)
                         first to paddle.await()
                     }
+                    val paddleReadings=paddleResult.first
+                    val paddleError=paddleResult.second
                     val fused=GlinerFusion.fuse(mlKitReadings+paddleReadings)
                     val engineReadings=linkedMapOf(MLKIT_ID to mlKitReadings.size,PADDLE_ID to paddleReadings.size)
                     val elapsed=SystemClock.elapsedRealtime()-started
                     Outcome(fused,mlKitReadings+paddleReadings,elapsed,"${spec.detector.name} + ${spec.recognizer.name} = ${paddleReadings.size} lines; "+
                         "ML Kit Latin = ${mlKitReadings.size} lines; fused = ${fused.size} lines; "+
-                        (if(crop!=null) "crop ${crop[2]}x${crop[3]} @ ${crop[0]},${crop[1]} of ${bitmap.width}x${bitmap.height}" else "full frame")+
+                        (if(crop!=null) "crop ${crop[2]}x${crop[3]} @ ${crop[0]},${crop[1]} of ${photoWidth}x$photoHeight" else "full frame")+
+                        (paddleError?.let { " · paddle: $it" } ?: "")+
                         (if(elapsed>deadlineAtMs-started) " · budget reached" else ""),engineReadings,
                         decoded.origW,decoded.origH,ocrBitmap.width,ocrBitmap.height,workspace.peakCount,crop!=null)
                 }
@@ -171,7 +183,13 @@ internal object GlinerOcr {
         return intArrayOf(cropLeft,cropTop,cropW,cropH)
     }
 
-    /** Pinned PP-OCRv6 Medium line recognizer over pre-detected regions, CTC posterior per line. */
+    /**
+     * Pinned PP-OCRv6 Medium line recognizer over pre-detected regions, CTC
+     * posterior per line. Returns the readings plus the first per-region
+     * failure (if any): a region failure drops that line, but a systematic
+     * failure must stay visible in the outcome note instead of silently
+     * reading as "0 lines".
+     */
     private suspend fun readPaddle(
         context:Context,
         bitmap:Bitmap,
@@ -179,9 +197,10 @@ internal object GlinerOcr {
         spec:com.yourapp.wine.textlab.PaddleCandidate,
         deadlineAtMs:Long,
         regions:List<com.yourapp.wine.textlab.PaddleRegion>,
-    ):List<GlinerFusion.Reading> {
+    ):Pair<List<GlinerFusion.Reading>,String?> {
         val gate=WineScannerServices.nativeGate
         val lines=mutableListOf<GlinerFusion.Reading>()
+        var firstError:String?=null
         try {
             for(region in regions) {
                 if(SystemClock.elapsedRealtime()>=deadlineAtMs) break
@@ -199,7 +218,10 @@ internal object GlinerOcr {
                     }
                 } catch(cancel:CancellationException) { throw cancel }
                 catch(expired:CandidateBudgetExpired) { break }
-                catch(_:Exception) { text="" }
+                catch(error:Exception) {
+                    if(firstError==null) firstError="${error.javaClass.simpleName}: ${error.message ?: "no detail"}"
+                    text=""
+                }
                 if(text.isNotBlank()) lines += GlinerFusion.Reading(PADDLE_ID,text,box,region.quadBase,
                     posterior.takeIf { it>0f }?.coerceIn(0.01f,0.99f) ?: 0.5f,
                     variantId="V0",scoreIsEstimated=true)
