@@ -100,7 +100,7 @@ internal fun GlinerLabScreen(
     state:GlinerLabState,
     labState:WineAppLabelsState,
     onImport:()->Unit, onClearBundle:()->Unit, onRefresh:()->Unit,
-    onRunAll:()->Unit, onRunV2:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
+    onRunAll:()->Unit, onRunV2:()->Unit, onImportV1:()->Unit, onRunImage:(String)->Unit, onStop:()->Unit,
     onChooseImages:()->Unit, onRunCustom:()->Unit, onRunCustomImage:(String)->Unit,
     onImportAudit:()->Unit, onUseBundledAudit:()->Unit, onRunAudit:()->Unit, onSaveAudit:()->Unit, onSaveReviewedAudit:()->Unit,
     onSaveAuditField:(String,String,String,Boolean)->Unit,
@@ -184,6 +184,9 @@ internal fun GlinerLabScreen(
             }
             Button(onClick=onRunV2,enabled=!state.running && state.bundle.ready && state.samples.isNotEmpty()) {
                 Text("Start GLiNER v2 run (production pipeline)")
+            }
+            TextButton(onClick=onImportV1,enabled=!state.running && !state.importingImages && state.samples.isNotEmpty()) {
+                Text("Import saved GLiNER v1 results (JSON)")
             }
             SelectionContainer { RunTimers(elapsed,state.done,state.total) }
             Row {

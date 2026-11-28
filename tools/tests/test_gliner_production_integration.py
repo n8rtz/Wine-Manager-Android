@@ -124,4 +124,17 @@ class GlinerProductionIntegrationTest(unittest.TestCase):
         self.assertIn('Start GLiNER v2 run (production pipeline)',screen)
         self.assertIn('priorAggregate',viewmodel)
 
+    def test_v1_results_importer_rescores_export_against_current_references(self):
+        viewmodel=(ROOT/'gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/viewmodels/GlinerLabViewModel.kt').read_text()
+        self.assertIn('fun importV1Results(uri:Uri)',viewmodel)
+        self.assertIn('require(document.optString("pipeline")=="gliner-lane-v1")',viewmodel)
+        # Rescored from fields against the live sample targets, not
+        # trusting the export's stored outcomes.
+        self.assertIn('PhoneCorpusMath.outcome(row.sample.target(f),fields[f].orEmpty(),failed)',viewmodel)
+        self.assertIn('aggregate=aggregateGlinerRows(samples,stopped=false)',viewmodel)
+        screen=(ROOT/'gliner-workflow/src/appIntegration/java/com/n8rtz/winetracker/ui/screens/GlinerLabScreen.kt').read_text()
+        self.assertIn('Import saved GLiNER v1 results (JSON)',screen)
+        activity=(ROOT/'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabActivity.kt').read_text()
+        self.assertIn('uri?.let(vm::importV1Results)',activity)
+
 if __name__=='__main__': unittest.main()

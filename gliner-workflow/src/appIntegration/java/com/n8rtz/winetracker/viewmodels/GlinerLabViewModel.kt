@@ -347,6 +347,79 @@ internal class GlinerLabViewModel(application:Application):AndroidViewModel(appl
         }
     }
 
+    /**
+     * Import a previously exported GLiNER v1 corpus run ("Save JSON")
+     * as the saved v1 scoreboard state. Predictions are rescored
+     * against the current references; no model is run. Running
+     * GLiNER v2 afterwards retains these as the prior (v1) row.
+     */
+    fun importV1Results(uri:Uri) {
+        if(mutable.value.running || mutable.value.importingImages) return
+        if(mutable.value.samples.isEmpty()) { mutable.update { it.copy(message="The packaged dataset is still loading") }; return }
+        mutable.update { it.copy(importingImages=true,message="Importing GLiNER v1 results\u2026") }
+        session.scope.launch {
+            val result=runCatching {
+                val document=GlinerAuditStore.readDocument(app,uri)
+                require(document.optString("pipeline")=="gliner-lane-v1") { "Not a GLiNER lab export" }
+                val images=document.optJSONArray("images") ?: throw IllegalArgumentException("Export has no images array")
+                val byImage=mutableMapOf<String,JSONObject>()
+                for(i in 0 until images.length()) {
+                    val item=images.optJSONObject(i) ?: continue
+                    byImage[item.optString("image")]=item
+                }
+                require(byImage.isNotEmpty()) { "Export has no image results" }
+                var matched=0
+                val samples=mutable.value.samples.map { row ->
+                    val item=byImage[row.sample.image] ?: return@map row
+                    matched++
+                    val fieldsJson=item.optJSONObject("fields")
+                    val fields=PhoneCorpusMath.fields.associateWith { f -> fieldsJson?.optString(f).orEmpty() }
+                    val statesJson=item.optJSONObject("states")
+                    val states=PhoneCorpusMath.fields.associateWith { f -> statesJson?.optString(f).orEmpty() }
+                    val failed=item.optString("status")!="complete"
+                    val outcomes=PhoneCorpusMath.fields.associateWith { f ->
+                        PhoneCorpusMath.outcome(row.sample.target(f),fields[f].orEmpty(),failed)
+                    }
+                    val imported=GlinerLabImageResult(
+                        image=row.sample.image,reviewNumber=row.sample.reviewNumber,
+                        status=item.optString("status"),message=item.optString("message"),
+                        ocrLines=item.optJSONArray("ocr_lines")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+                        observations=emptyList(),
+                        laneTexts=GlinerLane.ordered.associate { lane -> lane.key to (item.optJSONObject("lanes")?.optString(lane.key).orEmpty()) },
+                        residualTexts=item.optJSONArray("residual")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+                        fields=fields,fieldStates=states,
+                        fieldResults=PhoneCorpusMath.fields.map { f ->
+                            com.yourapp.wine.gliner.GlinerFieldResult(f,GlinerLabRunner.fieldLabels.getValue(f),
+                                row.sample.target(f).display,fields[f].orEmpty(),states[f].orEmpty(),outcomes.getValue(f))
+                        },
+                        eligible=PhoneCorpusMath.eligible(PhoneCorpusMath.fields.associateWith { f -> row.sample.target(f) }),
+                        errorCount=outcomes.values.count { o -> !PhoneCorpusMath.correct(o) },
+                        wordCount=item.optInt("words"),spanCount=item.optInt("spans"),
+                        layout=item.optString("layout"),outputShape=item.optString("output_shape"),
+                        modelSignature=item.optString("model"),int4=item.optBoolean("int4",true),
+                        ocrMs=item.optLong("ocr_ms"),glinerMs=item.optLong("gliner_ms"),
+                        postMs=item.optLong("post_ms"),totalMs=item.optLong("total_ms"),
+                        notes=item.optString("notes"),
+                        baseFields=item.optJSONObject("base_fields")?.let { json ->
+                            PhoneCorpusMath.fields.associateWith { f -> json.optString(f) } } ?: emptyMap(),
+                        baseOutcomes=item.optJSONObject("base_outcomes")?.let { json ->
+                            PhoneCorpusMath.fields.associateWith { f -> json.optString(f) } } ?: emptyMap(),
+                        fieldDecisions=item.optJSONArray("gliner_decisions")?.let { arr -> List(arr.length()) { j -> arr.optString(j) } }.orEmpty(),
+                    )
+                    row.copy(status=imported.status,result=imported)
+                }
+                Triple(samples,matched,document.optString("build") to document.optString("decision_policy"))
+            }
+            mutable.update { state -> result.fold(onSuccess={ (samples,matched,meta) ->
+                state.copy(samples=samples,importingImages=false,
+                    aggregate=aggregateGlinerRows(samples,stopped=false),
+                    runVariant="GLiNER v1",
+                    message="Imported GLiNER v1 results: $matched/${samples.size} corpus photos matched \u00b7 build ${meta.first} \u00b7 ${meta.second}. " +
+                        "Rescored against current references; no model was run. Now run GLiNER v2 to compare.")
+            },onFailure={ error -> state.copy(importingImages=false,message="V1 results import failed: ${error.message}") }) }
+        }
+    }
+
     /** Explicitly copy current human reviews into the saved audit set; never use predictions for unreviewed fields. */
     fun saveReviewedAsAudit() {
         val snapshot=mutable.value
