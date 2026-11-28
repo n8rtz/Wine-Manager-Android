@@ -345,14 +345,16 @@ internal object GlinerLabRunner {
         // medal stickers). Filling the filtered set directly yields the
         // same anchor the spatial stage would have rebuilt.
         val bottleKept=TextLabBottleFilter.filterTokens(records).kept
-        // Drop very weak readings before the fill/evidence stages: every
-        // field threshold downstream already ignores them (spans need
-        // >=.75 paddle / >=.60 ML Kit; even the vintage rescue needs
-        // >=.45), but each one still costs phrase generation and KB
-        // queries in the extractor. The bottle filter above saw the
-        // full set, so its geometry decisions are unchanged.
-        val effectiveRecords=bottleKept.filter { it.score>=0.45f }
-        if(effectiveRecords.size<bottleKept.size) notes += "post records: "+effectiveRecords.size+"/"+bottleKept.size+" at score >= 0.45"
+        // No score floor on the post records: a 0.45 filter here used to
+        // drop weak readings before the fill/evidence stages on the theory
+        // that downstream span thresholds (>=.75 paddle / >=.60 ML Kit)
+        // ignore them anyway. The lab A/B disproved that — the form fill
+        // and phrase generation consume the raw records, and dropping
+        // low-score lines (ML Kit scores are estimates) cost producer /
+        // wine-name fields across the corpus with identical OCR readings
+        // on both sides. The span thresholds still gate what counts as
+        // evidence; they no longer delete text before it can be used.
+        val effectiveRecords=bottleKept
         // Sub-stage timings inside FILL, surfaced in the scan diagnostics
         // (developer recognition-time popup) so a slow fill can be blamed
         // on data loads vs. computation.

@@ -118,10 +118,14 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertIn('session.anchorHybrid(kb)', warmup)
         self.assertIn('session.producerRepair(kb)', warmup)
 
-    def test_post_records_have_score_floor_and_evidence_timing_split(self):
+    def test_post_records_have_no_score_floor_and_evidence_timing_split(self):
         runner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabRunner.kt').read_text()
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
-        self.assertIn('val effectiveRecords=bottleKept.filter { it.score>=0.45f }', runner)
+        # Quality first: weak readings are NOT deleted before the
+        # fill/evidence stages (a 0.45 floor cost fields in the lab A/B
+        # with identical OCR readings); span thresholds gate evidence.
+        self.assertIn('val effectiveRecords=bottleKept', runner)
+        self.assertNotIn('bottleKept.filter { it.score>=0.45f }', runner)
         self.assertIn('ScanStage.EVIDENCE_SETUP', runner)
         self.assertIn('ScanStage.PRODUCER_LOOKUPS', runner)
         self.assertIn('"Evidence setup (indexes)"', add)
