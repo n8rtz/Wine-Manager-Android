@@ -7,14 +7,6 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
     private var indexed: List<Place>? = null
     private var snapshot: List<Place> = emptyList()
 
-    companion object {
-        // Several pipeline stages wrap the same base KB; the merged
-        // view depends only on the base places list instance, so one
-        // computed snapshot is shared by every wrapper around it.
-        // A KB import publishes a new base list, which naturally
-        // misses this cache and recomputes.
-        private val sharedSnapshots = java.util.WeakHashMap<List<Place>, List<Place>>()
-    }
 
     /** No coordinates: merge existing curated origins into a cached immutable view, including on already-installed databases. */
     @Synchronized override fun places(): List<Place> {
@@ -89,6 +81,12 @@ class SupplementedWineKnowledgeBase(private val base: WineKnowledgeBase) : WineK
     }
 
     private companion object {
+        // Several pipeline stages wrap the same base KB; the merged
+        // view depends only on the base places list instance, so one
+        // computed snapshot is shared by every wrapper around it.
+        // A KB import publishes a new base list, which naturally
+        // misses this cache and recomputes.
+        private val sharedSnapshots = java.util.WeakHashMap<List<Place>, List<Place>>()
         val containment = GeneratedWineKnowledge.avaContainment + mapOf(
             "Brunello di Montalcino" to "Montalcino", "Rosso di Montalcino" to "Montalcino",
             "Alexander Valley" to "Sonoma County", "Russian River Valley" to "Sonoma County",
