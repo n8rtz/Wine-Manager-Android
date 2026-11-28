@@ -41,12 +41,13 @@ class LabelScanCaptureUiTest(unittest.TestCase):
         self.assertIn('Large image dataset test', PROFILE.read_text())
 
 
-def test_confirm_still_renders_before_speculative_scan_starts():
-    session = (ROOT / 'app/src/main/java/com/n8rtz/winetracker/scanner/ProductionLabelScanSession.kt').read_text()
-    assert 'private const val SPECULATIVE_START_DELAY_MS = 500L' in session
-    assert 'delay(SPECULATIVE_START_DELAY_MS)' in session
-    add = (ROOT / 'app/src/main/java/com/n8rtz/winetracker/ui/screens/AddWineScreen.kt').read_text()
-    assert '.size(1600)' in add
-    assert '.crossfade(true)' not in add
+
+    def test_confirm_still_renders_before_speculative_scan_starts(self):
+        session = (ROOT / 'app/src/main/java/com/n8rtz/winetracker/scanner/ProductionLabelScanSession.kt').read_text()
+        self.assertIn('private const val SPECULATIVE_START_DELAY_MS = 500L', session)
+        self.assertIn('delay(SPECULATIVE_START_DELAY_MS)', session)
+        add = (ROOT / 'app/src/main/java/com/n8rtz/winetracker/ui/screens/AddWineScreen.kt').read_text()
+        self.assertIn('.size(1600)', add)
+        self.assertNotIn('.crossfade(true)', add)
 
 if __name__ == '__main__': unittest.main()
