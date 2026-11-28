@@ -95,7 +95,7 @@ internal data class GlinerLabImageResult(
  */
 internal object GlinerLabRunner {
     /** Production evidence cap: a label whose evidence extraction runs past this falls back to the base fill + resolvers. Lab runs keep the extractor default. */
-    const val PRODUCTION_EVIDENCE_BUDGET_MS=2_500L
+    const val PRODUCTION_EVIDENCE_BUDGET_MS=5_000L
     const val OCR_BUDGET_MS=60_000L
     const val GLINER_BUDGET_MS=30_000L
     const val POST_BUDGET_MS=60_000L

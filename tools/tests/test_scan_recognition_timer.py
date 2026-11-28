@@ -158,7 +158,7 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertEqual(spatial.count('budgetMs=evidenceBudgetMs'), 2)
         # Production (deadline-bound) runs cap evidence at 4s; lab runs
         # (no deadline) keep the extractor default.
-        self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=2_500L', runner)
+        self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=5_000L', runner)
         self.assertIn('ScanStage.EVIDENCE_EXTRACT,extractMs', runner)
         # A failed evidence summary (budget cap) must fall back to the
         # base fill summary, never fail the scan.
