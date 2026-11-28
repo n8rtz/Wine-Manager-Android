@@ -44,8 +44,8 @@ internal class ProducerRepair(base:WineKnowledgeBase) {
     private fun cleanIdentity(text:String)=MetadataRules.isIdentity(text) && !EvidenceRanking.namedCuvee(text) &&
         !WineDesignations.isDesignation(text) && !WineDesignations.isAppellationName(text) && !text.any(Char::isDigit)
 
-    fun repair(original:String,records:List<TokenRecord>,alternatives:List<String>,config:Config):Decision {
-        val deadline=SystemClock.elapsedRealtime()+60000L
+    fun repair(original:String,records:List<TokenRecord>,alternatives:List<String>,config:Config,budgetMs:Long=60_000L):Decision {
+        val deadline=SystemClock.elapsedRealtime()+budgetMs
         fun budget() { check(SystemClock.elapsedRealtime()<deadline) { "Producer repair exceeded 60-second budget" } }
         fun isHeading(text:String)=headingOnly(text) || (config.refined && EvidenceIdentityRoles.headingOnly(text))
         val graph=EvidenceGraphBuilder.build(records,::budget,true)

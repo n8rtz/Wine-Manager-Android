@@ -99,7 +99,8 @@ internal object TextLabSpatialPreview {
         // GLiNER lane lab: grouped lane observations replace the raw per-line readings as this
         // contender's input. Null keeps every existing caller byte-identical.
         recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,
-        evidenceBudgetMs:Long=com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS) {
+        evidenceBudgetMs:Long=com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS,
+        repairBudgetMs:Long=60_000L) {
         val summaryStage=stagePrefix+"evidence_summary"
         if(journal.rows.any { it["stage"]==summaryStage }) return
         try {
@@ -160,14 +161,14 @@ internal object TextLabSpatialPreview {
             val allowHybridVintage=if(isLabSpatial) labModules.vintageRecovery else true
             val evidenceResult=if(isLabSpatial && producerIndex!=null && engine!=null) {
                 engine.withDeferredBlankSubregionFallback {
-                    TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,budgetMs=evidenceBudgetMs,
+                    TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,budgetMs=evidenceBudgetMs,repairBudgetMs=repairBudgetMs,
                         useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                         exactGeographyFastPath=true,allowHybridVintageFallback=allowHybridVintage,
                         appellationFallbackEngines=if(labModules.appellationWineFallback) 1 else 0,
                         deepestAppellationFallback=labModules.deepestAppellationFallback,styleAppellationWine=labModules.styleAppellationWine,producerAnchorFallback=labModules.producerAnchorFallback,geographyAppellationWine=labModules.geographyAppellationWine)
                 }
             } else {
-                TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,budgetMs=evidenceBudgetMs,
+                TextLabEvidencePreview.append(work,engine,year,useAnchors=true,hybrid=hybrid,budgetMs=evidenceBudgetMs,repairBudgetMs=repairBudgetMs,
                     useProducerRepair=true,producerRepair=repair,recordsOverride=readings,
                     exactGeographyFastPath=policy.minimumIndependentEngines<2,
                     allowHybridVintageFallback=allowHybridVintage,

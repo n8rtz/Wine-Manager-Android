@@ -12,7 +12,7 @@ internal object TextLabEvidencePreview {
         placeRepair=if(repairPlaces) PlaceRepair.Config.experimental else PlaceRepair.Config.off,
         allowWineTitlePairs=labModules.verticalWineTitlePairs,
         modules=labModules)
-    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false,allowHybridVintageFallback:Boolean=true,appellationFallbackEngines:Int=0,deepestAppellationFallback:Boolean=false,styleAppellationWine:Boolean=false,producerAnchorFallback:Boolean=false,geographyAppellationWine:Boolean=false,budgetMs:Long=EvidenceExtractor.DEFAULT_BUDGET_MS):EvidenceResult? {
+    fun append(journal:TextLabJournal,engine:EvidenceExtractor?,year:Int,useAnchors:Boolean=false,hybrid:EvidenceAnchorHybrid?=null,useProducerRepair:Boolean=false,producerRepair:ProducerRepair?=null,recordsOverride:List<com.yourapp.wine.ocr.TokenRecord>?=null,exactGeographyFastPath:Boolean=false,allowHybridVintageFallback:Boolean=true,appellationFallbackEngines:Int=0,deepestAppellationFallback:Boolean=false,styleAppellationWine:Boolean=false,producerAnchorFallback:Boolean=false,geographyAppellationWine:Boolean=false,budgetMs:Long=EvidenceExtractor.DEFAULT_BUDGET_MS,repairBudgetMs:Long=60_000L):EvidenceResult? {
         if(journal.rows.any { it["stage"]=="evidence_summary" }) return null
         val values=mutableMapOf("post_processing_version" to if(useProducerRepair) ProducerRepair.VERSION else if(useAnchors) EvidenceAnchorHybrid.VERSION else EvidenceExtractor.VERSION,"field_year" to year.toString(),
             "preview_policy" to if(useAnchors) "guarded hybrid: saved baseline producer; populated vintage preserved, otherwise validated experimental vintage may fill; rules-001 wine/origin; heading-only producer abstention; no production form writes" else "experimental independent evidence graph; saved readings; no production form writes")
@@ -62,24 +62,39 @@ internal object TextLabEvidencePreview {
                     }
                 }
             }
+            val combineMs=hybridMs
+            var repairMs=0L
             if(useProducerRepair) {
                 val started=android.os.SystemClock.elapsedRealtime()
                 val original=values.getValue("producer")
                 // Historical alternatives are audit-only: actual repairs require current observed phrase support.
-                val decision=producerRepair!!.repair(original,records,emptyList(),ProducerRepair.recommendedConfig)
-                hybridMs+=android.os.SystemClock.elapsedRealtime()-started
+                // A repair overrun (production budget) keeps the hybrid
+                // producer; it must never fail the whole evidence stage.
+                val decision=try {
+                    producerRepair!!.repair(original,records,emptyList(),ProducerRepair.recommendedConfig,repairBudgetMs)
+                } catch(cancel:kotlinx.coroutines.CancellationException) { throw cancel }
+                catch(error:Exception) {
+                    values["producer_repair_status"]="failed: ${error.javaClass.simpleName}"
+                    null
+                }
+                repairMs=android.os.SystemClock.elapsedRealtime()-started
+                hybridMs+=repairMs
+                if(decision!=null) {
                 values["producer"]=decision.value
                 values["producer_state"]=if(decision.value.isBlank()) "RED" else "YELLOW"
                 values["producer_reason"]=decision.reason+"; before="+original+"; confirm manually"
                 values["preview_policy"]=values.getValue("preview_policy")+"; conservative two-engine producer repair"
                 decision.candidates.forEach { c -> journal.add("experimental_evidence","evidence_decision",values=mapOf("evidence_details" to "producer-repair candidate: $c")) }
                 journal.add("experimental_evidence","evidence_decision",values=mapOf("evidence_details" to "producer-repair result: before=$original; after=${decision.value}; ${decision.reason}"))
+                }
             }
             values["field_input_lines"]=result.graph.observations.size.toString()
             values["field_values_found"]=FieldId.entries.count { values[it.name.lowercase(java.util.Locale.ROOT)].orEmpty().isNotBlank() }.toString()
             values["work_ms"]=(result.elapsedMs+hybridMs).toString()
             values["evidence_extract_ms"]=result.elapsedMs.toString()
             values["evidence_hybrid_ms"]=hybridMs.toString()
+            values["evidence_combine_ms"]=combineMs.toString()
+            values["evidence_repair_ms"]=repairMs.toString()
             values["role_diagnostics"]=fill.postProcessing.joinToString("\n")
             // Separate bounded diagnostic rows preserve the graph without replacing original recognition rows.
             result.graph.observations.forEach { o -> journal.add("experimental_evidence","evidence_observation",values=mapOf(

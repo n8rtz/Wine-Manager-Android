@@ -96,6 +96,8 @@ internal data class GlinerLabImageResult(
 internal object GlinerLabRunner {
     /** Production evidence cap: a label whose evidence extraction runs past this falls back to the base fill + resolvers. Lab runs keep the extractor default. */
     const val PRODUCTION_EVIDENCE_BUDGET_MS=5_000L
+    /** Producer repair rebuilds a full evidence graph; bound it in production so it cannot dominate the scan. Its overrun keeps the hybrid producer. */
+    const val PRODUCTION_REPAIR_BUDGET_MS=1_200L
     const val OCR_BUDGET_MS=60_000L
     const val GLINER_BUDGET_MS=30_000L
     const val POST_BUDGET_MS=60_000L
@@ -185,7 +187,8 @@ internal object GlinerLabRunner {
             check(postStarted<deadlineAtMs) { "Scan deadline reached before field extraction" }
             onStage(LabelScanProgressStep.FILL_DETAILS)
             val post=postProcess(context,records,warm,modules,labelled,
-                evidenceBudgetMs=if(deadlineAtMs==Long.MAX_VALUE) com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS else PRODUCTION_EVIDENCE_BUDGET_MS)
+                evidenceBudgetMs=if(deadlineAtMs==Long.MAX_VALUE) com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS else PRODUCTION_EVIDENCE_BUDGET_MS,
+                repairBudgetMs=if(deadlineAtMs==Long.MAX_VALUE) 60_000L else PRODUCTION_REPAIR_BUDGET_MS)
             postMs=SystemClock.elapsedRealtime()-postStarted
             check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached during field extraction" }
             val laneHints=labelled.entities.map { GlinerFieldHint(it.lane,it.text,it.score) }
@@ -295,6 +298,7 @@ internal object GlinerLabRunner {
         modules:LabPostOcrModules,
         labelled:GlinerLabelResult,
         evidenceBudgetMs:Long=com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS,
+        repairBudgetMs:Long=60_000L,
     ):PostOutcome {
         val year=Year.now().value
         val journal=TextLabJournal(setOf("candidate_3"),BuildConfig.BUILD_COMMIT,true)
@@ -388,7 +392,7 @@ internal object GlinerLabRunner {
             }
             TextLabSpatialPreview.append(journal,engine,hybrid,repair,year,producers,unavailable,lookupBudget,
                 candidate="gliner_lane",stagePrefix="gliner_",fillEngine=fill,labModules=modules,
-                policy=ProducerResolver.Policy.singleReading,recordsOverride=effectiveRecords,evidenceBudgetMs=evidenceBudgetMs)
+                policy=ProducerResolver.Policy.singleReading,recordsOverride=effectiveRecords,evidenceBudgetMs=evidenceBudgetMs,repairBudgetMs=repairBudgetMs)
         } catch(cancel:CancellationException) { throw cancel }
         catch(error:Exception) {
             notes += "spatial contender error: ${error.javaClass.simpleName}: ${error.message}"
@@ -427,6 +431,8 @@ internal object GlinerLabRunner {
         if(extractMs>0) detailStages += ScanStageTiming(ScanStage.EVIDENCE_EXTRACT,extractMs)
         val hybridMs=evidenceRow?.get("evidence_hybrid_ms")?.toLongOrNull() ?: 0L
         if(hybridMs>0) detailStages += ScanStageTiming(ScanStage.EVIDENCE_HYBRID,hybridMs)
+        val repairMs=evidenceRow?.get("evidence_repair_ms")?.toLongOrNull() ?: 0L
+        if(repairMs>0) detailStages += ScanStageTiming(ScanStage.PRODUCER_REPAIR,repairMs)
         // Whatever of the EVIDENCE stage is not extraction, hybrid or
         // gazetteer lookups is the spatial tail: phrase proposals,
         // resolver glue, completion/near-match sections, journal work.

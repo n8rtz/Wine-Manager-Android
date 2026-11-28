@@ -161,6 +161,10 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=5_000L', runner)
         self.assertIn('ScanStage.EVIDENCE_EXTRACT,extractMs', runner)
         self.assertIn('ScanStage.SPATIAL_TAIL,tailMs', runner)
+        self.assertIn('const val PRODUCTION_REPAIR_BUDGET_MS=1_200L', runner)
+        preview_src = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
+        self.assertIn('producerRepair!!.repair(original,records,emptyList(),ProducerRepair.recommendedConfig,repairBudgetMs)', preview_src)
+        self.assertIn('values["producer_repair_status"]="failed: ${error.javaClass.simpleName}"', preview_src)
         spatial_src = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabSpatialPreview.kt').read_text()
         # One shared completion gazetteer, not one per candidate.
         self.assertIn('val completionGazetteer=engine?.let', spatial_src)
