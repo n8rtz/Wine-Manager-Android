@@ -132,12 +132,15 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         runner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerLabRunner.kt').read_text()
         scanner = (ROOT / 'gliner-workflow/src/appIntegration/java/com/yourapp/wine/gliner/GlinerProductionScanner.kt').read_text()
         add = (APP / 'ui/screens/AddWineScreen.kt').read_text()
-        # Fast path: strong base fill + GLiNER agreement skips the
-        # evidence/spatial stage entirely.
-        self.assertIn('val skipSpatial=listOf("producer","wine_name","vintage","country","region")', runner)
-        self.assertIn('laneAgrees(GlinerLane.PRODUCER,fillValue("producer"))', runner)
-        self.assertIn('if(!skipSpatial) {', runner)
-        self.assertIn('spatial contender skipped: strong base fill and GLiNER lanes agree', runner)
+        # Quality first: no fast path skips the evidence/spatial stage,
+        # and producer repair is never truncated in production.
+        self.assertNotIn('skipSpatial', runner)
+        self.assertNotIn('spatial contender skipped', runner)
+        self.assertNotIn('PRODUCTION_REPAIR_BUDGET_MS', runner)
+        self.assertIn('repairBudgetMs=60_000L)', runner)
+        # Graph-builder de-duplication is bookkeeping only.
+        graph = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/evidence/EvidenceGraph.kt').read_text()
+        self.assertIn('val seenPhrases=mutableSetOf<Pair<Set<Int>,String>>()', graph)
         # Previously unmeasured scanner time is now staged.
         self.assertIn('ScanStage.WARM_SESSION,warmPickupMs', scanner)
         self.assertIn('ScanStage.FIELD_ADAPTER,adapterMs', scanner)
@@ -161,7 +164,6 @@ class ScanRecognitionTimerTests(unittest.TestCase):
         self.assertIn('const val PRODUCTION_EVIDENCE_BUDGET_MS=5_000L', runner)
         self.assertIn('ScanStage.EVIDENCE_EXTRACT,extractMs', runner)
         self.assertIn('ScanStage.SPATIAL_TAIL,tailMs', runner)
-        self.assertIn('const val PRODUCTION_REPAIR_BUDGET_MS=1_200L', runner)
         preview_src = (ROOT / 'app/src/main/java/com/yourapp/wine/textlab/TextLabEvidencePreview.kt').read_text()
         self.assertIn('producerRepair!!.repair(original,records,emptyList(),ProducerRepair.recommendedConfig,repairBudgetMs)', preview_src)
         self.assertIn('values["producer_repair_status"]="failed: ${error.javaClass.simpleName}"', preview_src)

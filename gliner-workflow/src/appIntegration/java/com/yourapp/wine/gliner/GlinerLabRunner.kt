@@ -96,8 +96,6 @@ internal data class GlinerLabImageResult(
 internal object GlinerLabRunner {
     /** Production evidence cap: a label whose evidence extraction runs past this falls back to the base fill + resolvers. Lab runs keep the extractor default. */
     const val PRODUCTION_EVIDENCE_BUDGET_MS=5_000L
-    /** Producer repair rebuilds a full evidence graph; bound it in production so it cannot dominate the scan. Its overrun keeps the hybrid producer. */
-    const val PRODUCTION_REPAIR_BUDGET_MS=1_200L
     const val OCR_BUDGET_MS=60_000L
     const val GLINER_BUDGET_MS=30_000L
     const val POST_BUDGET_MS=60_000L
@@ -188,7 +186,7 @@ internal object GlinerLabRunner {
             onStage(LabelScanProgressStep.FILL_DETAILS)
             val post=postProcess(context,records,warm,modules,labelled,
                 evidenceBudgetMs=if(deadlineAtMs==Long.MAX_VALUE) com.yourapp.wine.textlab.evidence.EvidenceExtractor.DEFAULT_BUDGET_MS else PRODUCTION_EVIDENCE_BUDGET_MS,
-                repairBudgetMs=if(deadlineAtMs==Long.MAX_VALUE) 60_000L else PRODUCTION_REPAIR_BUDGET_MS)
+                repairBudgetMs=60_000L)
             postMs=SystemClock.elapsedRealtime()-postStarted
             check(SystemClock.elapsedRealtime()<deadlineAtMs) { "Scan deadline reached during field extraction" }
             val laneHints=labelled.entities.map { GlinerFieldHint(it.lane,it.text,it.score) }
@@ -338,31 +336,10 @@ internal object GlinerLabRunner {
         val fill=warm.fillEngine(kb)
         TextLabFormPreview.append(journal,fill,year,recordsOverride=effectiveRecords)
         detailStages += ScanStageTiming(ScanStage.BASE_FILL,SystemClock.elapsedRealtime()-segmentStart)
-        // Fast path: when the base fill already produced producer, wine
-        // name, vintage, country and region with no RED field, AND the
-        // GLiNER lanes independently agree on producer and wine name,
-        // the evidence/spatial stage (the most expensive step by far)
-        // has little left to add — skip it and keep the base fields.
-        // Anything weaker or disagreeing takes the full stage as before.
-        val formRow=journal.rows.lastOrNull { it["stage"]=="form_summary" }
-        fun fillValue(key:String)=formRow?.get(key).orEmpty()
-        fun fillState(key:String)=formRow?.get(key+"_state").orEmpty()
-        fun laneAgrees(lane:GlinerLane,value:String):Boolean {
-            if(value.isBlank()) return false
-            val group=labelled.lane(lane)
-            if(group.isEmpty) return false
-            val target=GlinerDocument.normalize(value)
-            if(target.isBlank()) return false
-            return group.entities.any { GlinerDocument.normalize(it.text)==target } ||
-                GlinerDocument.normalize(group.text).contains(target)
-        }
-        val skipSpatial=listOf("producer","wine_name","vintage","country","region")
-            .all { fillValue(it).isNotBlank() && fillState(it)!="RED" } &&
-            laneAgrees(GlinerLane.PRODUCER,fillValue("producer")) &&
-            laneAgrees(GlinerLane.WINE_NAME,fillValue("wine_name"))
-        if(skipSpatial) notes += "spatial contender skipped: strong base fill and GLiNER lanes agree"
         segmentStart=SystemClock.elapsedRealtime()
-        if(!skipSpatial) {
+        // The full evidence/spatial stage always runs: no fast path
+        // skips it, so field quality never depends on a shortcut.
+        run {
         val engine=warm.evidenceExtractor(kb,true,true,modules)
         val hybrid=warm.anchorHybrid(kb)
         val repair=warm.producerRepair(kb)

@@ -47,9 +47,14 @@ internal object EvidenceGraphBuilder {
         }
         val phrases=mutableListOf<Phrase>()
         var truncated=records.size>MAX_OBSERVATIONS
+        // Membership index for the exact same (observation ids,
+        // normalized text) de-duplication the list scan below used to
+        // do in O(phrases) with a re-normalization per entry. Pure
+        // bookkeeping: the phrases produced are identical.
+        val seenPhrases=mutableSetOf<Pair<Set<Int>,String>>()
         fun add(text:String,ids:Set<Int>,box:RectF,why:String) {
             if(phrases.size>=MAX_PHRASES) { truncated=true;return }
-            if(text.length<=256 && phrases.none { it.observations==ids && TextNorm.normalize(it.text)==TextNorm.normalize(text) })
+            if(text.length<=256 && seenPhrases.add(ids to TextNorm.normalize(text)))
                 phrases+=Phrase(phrases.size,text,ids,RectF(box),why)
         }
         observations.forEach { add(it.record.textRaw,setOf(it.id),it.record.bboxRect,"observed") }
